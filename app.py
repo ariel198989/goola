@@ -90,4 +90,4 @@ def create_custom_link(original_link, agent_id):
     return parsed_url._replace(query=new_query).geturl()
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=8080)

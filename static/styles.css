@@ -1,0 +1,98 @@
+/* כאן תוכל להוסיף סגנונות מותאמים אישית */
+body {
+    font-family: 'Rubik', sans-serif;
+    color: #2d3748;
+}
+
+.container {
+    max-width: 600px;
+    width: 90%;
+}
+
+h1 {
+    font-size: 2.5rem;
+    line-height: 1.2;
+    margin-bottom: 2rem;
+}
+
+label {
+    font-weight: 600;
+    color: #4a5568;
+}
+
+input[type="url"], select {
+    width: 100%;
+    padding: 1rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 0.5rem;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+}
+
+input[type="url"]:focus, select:focus {
+    outline: none;
+    border-color: #4299e1;
+    box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5);
+}
+
+button {
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    transition: all 0.3s ease;
+}
+
+button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(50, 50, 93, 0.11), 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+#result {
+    background-color: #f0fff4;
+    border: 2px solid #9ae6b4;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    margin-top: 2rem;
+    box-shadow: 0 4px 6px rgba(50, 50, 93, 0.11), 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+#custom-link {
+    word-break: break-all;
+    margin: 1rem 0;
+    padding: 1rem;
+    background-color: #ffffff;
+    border: 1px solid #9ae6b4;
+    border-radius: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.copy-button {
+    background-color: #48bb78;
+    margin-top: 1rem;
+}
+
+.copy-button:hover {
+    background-color: #38a169;
+}
+
+/* Add some animations */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+#result {
+    animation: fadeIn 0.5s ease-out;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+    .container {
+        width: 95%;
+        padding: 1.5rem;
+    }
+
+    h1 {
+        font-size: 2rem;
+    }
+}

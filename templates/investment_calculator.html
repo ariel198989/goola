@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>מחשבון השקעות</title>
+    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body class="bg-gradient-to-br from-blue-500 to-purple-600 min-h-screen flex items-center justify-center p-4">
+    <div class="container max-w-4xl bg-white rounded-lg shadow-2xl p-8 transform hover:scale-105 transition-all duration-300">
+        <h1 class="text-4xl font-bold mb-8 text-center text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">מחשבון השקעות</h1>
+        <form id="investmentForm" class="space-y-4">
+            <div>
+                <label for="initialInvestment" class="block text-lg font-semibold text-gray-700">השקעה התחלתית (₪):</label>
+                <input type="number" id="initialInvestment" required class="w-full p-4 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent">
+            </div>
+            <div>
+                <label for="monthlyContribution" class="block text-lg font-semibold text-gray-700">הפקדה חודשית (₪):</label>
+                <input type="number" id="monthlyContribution" required class="w-full p-4 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent">
+            </div>
+            <div>
+                <label for="annualReturn" class="block text-lg font-semibold text-gray-700">תשואה שנתית משוערת (%):</label>
+                <input type="number" id="annualReturn" required class="w-full p-4 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent">
+            </div>
+            <div>
+                <label for="investmentPeriod" class="block text-lg font-semibold text-gray-700">תקופת השקעה (שנים):</label>
+                <input type="number" id="investmentPeriod" required class="w-full p-4 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent">
+            </div>
+            <button type="submit" class="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold py-4 px-4 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-300">חשב</button>
+        </form>
+        <div id="result" class="mt-8 p-4 bg-green-100 rounded-lg hidden">
+            <h2 class="text-2xl font-bold mb-2 text-green-800">תוצאה:</h2>
+            <p id="totalValue" class="text-xl"></p>
+        </div>
+        <a href="/" class="mt-6 inline-block bg-blue-500 text-white font-bold py-2 px-4 rounded hover:bg-blue-600 transition-colors">חזרה לדף הבית</a>
+    </div>
+    <script>
+        document.getElementById('investmentForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const initialInvestment = parseFloat(document.getElementById('initialInvestment').value);
+            const monthlyContribution = parseFloat(document.getElementById('monthlyContribution').value);
+            const annualReturn = parseFloat(document.getElementById('annualReturn').value) / 100;
+            const investmentPeriod = parseInt(document.getElementById('investmentPeriod').value);
+
+            const monthlyRate = annualReturn / 12;
+            const months = investmentPeriod * 12;
+
+            let totalValue = initialInvestment;
+            for (let i = 0; i < months; i++) {
+                totalValue += monthlyContribution;
+                totalValue *= (1 + monthlyRate);
+            }
+
+            document.getElementById('totalValue').textContent = `הערך הכולל לאחר ${investmentPeriod} שנים: ₪${totalValue.toFixed(2)}`;
+            document.getElementById('result').classList.remove('hidden');
+        });
+    </script>
+</body>
+</html>

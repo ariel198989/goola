@@ -8,7 +8,6 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="{{ url_for('static', filename='script.js') }}"></script>
 </head>
 <body class="bg-gradient-to-br from-blue-500 to-purple-600 min-h-screen flex items-center justify-center">
     <div class="container bg-white rounded-lg shadow-2xl p-8 transform hover:scale-105 transition-all duration-300">
@@ -25,17 +24,18 @@
                     <option value="{{ agent['מספר מפנה'] }}">{{ agent['שם פרטי'] }} {{ agent['שם משפחה'] }} ({{ agent['מספר מפנה'] }})</option>
                     {% endfor %}
                 </select>
-                <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700">
-                    <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
-                </div>
             </div>
-            <button type="submit" class="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold py-4 px-4 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-300">צור קישור</button>
+            <div class="relative">
+                <label for="freeText" class="block mb-2 text-lg font-semibold text-gray-700">מלל חופשי (אופציונלי):</label>
+                <textarea id="freeText" rows="4" class="w-full p-4 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent" placeholder="הזן כאן טקסט נוסף שיופיע לפני הקישור. לדוגמה: 'היי חברים! בדקו את ההזדמנות הזו:'"></textarea>
+            </div>
+            <button type="submit" class="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold py-4 px-4 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-300">צור קישור עם מלל</button>
         </form>
         
         <div id="result" class="hidden mt-8 bg-green-100 border-2 border-green-400 rounded-lg p-6">
-            <strong class="block mb-4 text-xl font-bold text-green-800">הקישור המותאם:</strong>
-            <p id="custom-link" class="mb-4 p-4 bg-white border border-green-400 rounded-lg break-all"></p>
-            <button onclick="copyToClipboard()" class="w-full bg-green-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-600 transition-all duration-300">העתק קישור</button>
+            <strong class="block mb-4 text-xl font-bold text-green-800">התוצאה:</strong>
+            <p id="full-text" class="mb-4 p-4 bg-white border border-green-400 rounded-lg break-all whitespace-pre-wrap"></p>
+            <button onclick="copyToClipboard()" class="w-full bg-green-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-600 transition-all duration-300">העתק תוצאה</button>
         </div>
     </div>
 
@@ -45,16 +45,18 @@
                 e.preventDefault();
                 var baseLink = $('#baseLink').val();
                 var agentId = $('#agent').val();
+                var freeText = $('#freeText').val();
                 
                 $.ajax({
                     url: '/generate_link',
                     method: 'POST',
                     data: {
                         link: baseLink,
-                        agent: agentId
+                        agent: agentId,
+                        free_text: freeText
                     },
                     success: function(response) {
-                        $('#custom-link').text(response.custom_link);
+                        $('#full-text').text(response.full_text);
                         $('#result').removeClass('hidden');
                     },
                     error: function() {
@@ -65,9 +67,9 @@
         });
 
         function copyToClipboard() {
-            var copyText = document.getElementById("custom-link");
+            var copyText = document.getElementById("full-text");
             navigator.clipboard.writeText(copyText.textContent).then(() => {
-                alert("הקישור הועתק ללוח!");
+                alert("התוצאה הועתקה ללוח!");
             });
         }
     </script>

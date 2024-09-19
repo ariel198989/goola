@@ -72,11 +72,20 @@ def index():
 def generate_link():
     agent_id = request.form['agent']
     original_link = request.form['link']
+    free_text = request.form.get('free_text', '')
     
     agent = next((a for a in agents if a['מספר מפנה'] == agent_id), None)
     if agent:
         custom_link = create_custom_link(original_link, agent['מספר מפנה'])
-        return jsonify({'custom_link': custom_link})
+        if free_text:
+            full_text = f"{free_text}\n\n{custom_link}"
+        else:
+            full_text = custom_link
+        result = {
+            'custom_link': custom_link,
+            'full_text': full_text
+        }
+        return jsonify(result)
     return jsonify({'error': 'Agent not found'}), 400
 
 def create_custom_link(original_link, agent_id):

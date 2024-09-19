@@ -105,9 +105,30 @@
 
         function copyToClipboard() {
             var copyText = document.getElementById("full-text");
-            navigator.clipboard.writeText(copyText.textContent).then(() => {
-                alert("התוצאה הועתקה ללוח!");
-            });
+            
+            // יצירת אלמנט טקסט זמני
+            var tempTextArea = document.createElement("textarea");
+            tempTextArea.value = copyText.innerText;
+            
+            // הוספת האלמנט הזמני לדף
+            document.body.appendChild(tempTextArea);
+            
+            // בחירת הטקסט באלמנט הזמני
+            tempTextArea.select();
+            tempTextArea.setSelectionRange(0, 99999); // עבור מכשירים ניידים
+            
+            // ניסיון להעתיק את הטקסט
+            try {
+                var successful = document.execCommand('copy');
+                var msg = successful ? "התוצאה הועתקה ללוח!" : "ההעתקה נכשלה, אנא נסה שוב.";
+                alert(msg);
+            } catch (err) {
+                console.error('שגיאה בהעתקה:', err);
+                alert('אירעה שגיאה בהעתקה. אנא נסה להעתיק ידנית.');
+            }
+            
+            // הסרת האלמנט הזמני מהדף
+            document.body.removeChild(tempTextArea);
         }
     </script>
 </body>

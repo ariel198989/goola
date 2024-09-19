@@ -1,5 +1,7 @@
 from flask import Flask, render_template, request, jsonify
 from urllib.parse import urlparse, parse_qs, urlencode
+import requests
+from bs4 import BeautifulSoup
 
 app = Flask(__name__)
 
@@ -81,9 +83,16 @@ def generate_link():
             full_text = f"{free_text}\n\n{custom_link}"
         else:
             full_text = custom_link
+        
+        # קבלת מידע על התמונה מהקישור
+        image_url, title, description = get_link_preview(original_link)
+        
         result = {
             'custom_link': custom_link,
-            'full_text': full_text
+            'full_text': full_text,
+            'image_url': image_url,
+            'title': title,
+            'description': description
         }
         return jsonify(result)
     return jsonify({'error': 'Agent not found'}), 400
@@ -97,6 +106,24 @@ def create_custom_link(original_link, agent_id):
     
     new_query = urlencode(query_params, doseq=True)
     return parsed_url._replace(query=new_query).geturl()
+
+def get_link_preview(url):
+    try:
+        response = requests.get(url)
+        soup = BeautifulSoup(response.text, 'html.parser')
+        
+        image_url = soup.find('meta', property='og:image')
+        image_url = image_url['content'] if image_url else ''
+        
+        title = soup.find('meta', property='og:title')
+        title = title['content'] if title else ''
+        
+        description = soup.find('meta', property='og:description')
+        description = description['content'] if description else ''
+        
+        return image_url, title, description
+    except:
+        return '', '', ''
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080)

@@ -29,7 +29,10 @@
                 <label for="freeText" class="block mb-2 text-lg font-semibold text-gray-700">מלל חופשי (אופציונלי):</label>
                 <textarea id="freeText" rows="4" class="w-full p-4 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent" placeholder="הזן כאן טקסט נוסף שיופיע לפני הקישור. לדוגמה: 'היי חברים! בדקו את ההזדמנות הזו:'"></textarea>
             </div>
-            <button type="submit" class="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold py-4 px-4 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-300">צור קישור עם מלל</button>
+            <div class="flex space-x-4">
+                <button type="submit" class="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-bold py-4 px-4 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-300">צור קישור עם מלל</button>
+                <button type="button" id="previewButton" class="flex-1 bg-gradient-to-r from-green-500 to-teal-600 text-white font-bold py-4 px-4 rounded-lg hover:from-green-600 hover:to-teal-700 transition-all duration-300">תצוגה מקדימה</button>
+            </div>
         </form>
         
         <div id="result" class="hidden mt-8 bg-green-100 border-2 border-green-400 rounded-lg p-6">
@@ -37,12 +40,35 @@
             <p id="full-text" class="mb-4 p-4 bg-white border border-green-400 rounded-lg break-all whitespace-pre-wrap"></p>
             <button onclick="copyToClipboard()" class="w-full bg-green-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-600 transition-all duration-300">העתק תוצאה</button>
         </div>
+
+        <div id="preview" class="hidden mt-8 bg-blue-100 border-2 border-blue-400 rounded-lg p-6">
+            <strong class="block mb-4 text-xl font-bold text-blue-800">תצוגה מקדימה:</strong>
+            <div id="preview-content" class="mb-4 p-4 bg-white border border-blue-400 rounded-lg">
+                <p id="preview-text" class="mb-2"></p>
+                <div id="preview-link-container" class="border rounded-lg overflow-hidden">
+                    <img id="preview-image" src="" alt="תמונת תצוגה מקדימה" class="w-full h-48 object-cover">
+                    <div class="p-4">
+                        <h3 id="preview-title" class="font-bold text-lg mb-2"></h3>
+                        <p id="preview-description" class="text-gray-700"></p>
+                        <a id="preview-link" href="#" target="_blank" class="text-blue-600 hover:underline mt-2 block"></a>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
         $(document).ready(function() {
             $('#linkForm').submit(function(e) {
                 e.preventDefault();
+                generateLink();
+            });
+
+            $('#previewButton').click(function() {
+                generateLink(true);
+            });
+
+            function generateLink(isPreview = false) {
                 var baseLink = $('#baseLink').val();
                 var agentId = $('#agent').val();
                 var freeText = $('#freeText').val();
@@ -56,14 +82,25 @@
                         free_text: freeText
                     },
                     success: function(response) {
-                        $('#full-text').text(response.full_text);
-                        $('#result').removeClass('hidden');
+                        if (isPreview) {
+                            $('#preview-text').text(freeText);
+                            $('#preview-image').attr('src', response.image_url);
+                            $('#preview-title').text(response.title);
+                            $('#preview-description').text(response.description);
+                            $('#preview-link').text(response.custom_link).attr('href', response.custom_link);
+                            $('#preview').removeClass('hidden');
+                            $('#result').addClass('hidden');
+                        } else {
+                            $('#full-text').text(response.full_text);
+                            $('#result').removeClass('hidden');
+                            $('#preview').addClass('hidden');
+                        }
                     },
                     error: function() {
                         alert('אירעה שגיאה ביצירת הקישור');
                     }
                 });
-            });
+            }
         });
 
         function copyToClipboard() {

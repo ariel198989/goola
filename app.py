@@ -6,6 +6,7 @@ from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
 import json
 import os
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///goola.db'

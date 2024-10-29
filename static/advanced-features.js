@@ -143,16 +143,19 @@ document.addEventListener('DOMContentLoaded', function() {
     const openModalBtn = document.getElementById('openAgentModal');
     const closeModalBtn = document.getElementById('closeAgentModal');
     const addAgentForm = document.getElementById('addAgentForm');
+    const agentSelect = document.getElementById('agent');
 
     if (openModalBtn) {
         openModalBtn.addEventListener('click', () => {
             modal.classList.remove('hidden');
+            document.getElementById('agentFullName').focus();
         });
     }
 
     if (closeModalBtn) {
         closeModalBtn.addEventListener('click', () => {
             modal.classList.add('hidden');
+            addAgentForm.reset();
         });
     }
 
@@ -160,19 +163,48 @@ document.addEventListener('DOMContentLoaded', function() {
         addAgentForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            try {
-                const agentData = {
-                    first_name: document.getElementById('agentFirstName').value,
-                    last_name: document.getElementById('agentLastName').value,
-                    referral_id: document.getElementById('agentReferralId').value
-                };
+            const fullName = document.getElementById('agentFullName').value.trim();
+            const referralId = document.getElementById('agentReferralId').value.trim();
+            
+            // בדיקות תקינות
+            if (!fullName) {
+                alert('נא להזין שם סוכן');
+                return;
+            }
+            if (!/^\d{4}$/.test(referralId)) {
+                alert('מספר מפנה חייב להכיל 4 ספרות בדיוק');
+                return;
+            }
 
-                await AgentManager.addAgent(agentData);
+            try {
+                const response = await fetch('/api/agents', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        first_name: fullName,
+                        last_name: '',  // שם משפחה ריק כי אנחנו מקבלים שם מלא
+                        referral_id: referralId
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('שגיאה בהוספת הסוכן');
+                }
+
+                // הוספת הסוכן החדש לרשימה הנפתחת
+                const option = document.createElement('option');
+                option.value = referralId;
+                option.text = `${fullName} (${referralId})`;
+                agentSelect.add(option);
+                agentSelect.value = referralId;  // בחירת הסוכן החדש
+
                 modal.classList.add('hidden');
                 addAgentForm.reset();
                 alert('הסוכן נוסף בהצלחה!');
             } catch (error) {
-                alert('שגיאה בהוספת הסוכן: ' + error.message);
+                alert(error.message);
             }
         });
     }
@@ -181,8 +213,17 @@ document.addEventListener('DOMContentLoaded', function() {
     window.addEventListener('click', (e) => {
         if (e.target === modal) {
             modal.classList.add('hidden');
+            addAgentForm.reset();
         }
     });
+
+    // מניעת הזנת תווים שאינם ספרות במספר מפנה
+    const referralIdInput = document.getElementById('agentReferralId');
+    if (referralIdInput) {
+        referralIdInput.addEventListener('input', function() {
+            this.value = this.value.replace(/[^0-9]/g, '').slice(0, 4);
+        });
+    }
 });
 
 // הוספת קוד לטיפול בשדות הטופס

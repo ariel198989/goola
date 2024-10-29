@@ -24,9 +24,14 @@
                         placeholder="כותרת הקישור (למשל: וובינר פנסיה)">
                     <textarea id="savedLinkText" rows="3" class="w-full p-2 border rounded mb-2" 
                         placeholder="הכנס טקסט וקישור לשמירה..."></textarea>
-                    <button onclick="saveLink()" class="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600">
-                        שמור קישור
-                    </button>
+                    <div class="flex justify-between">
+                        <button onclick="saveLink()" class="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600">
+                            שמור קישור
+                        </button>
+                        <button onclick="insertSavedTextToFreeText()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                            העתק לתיבת הטקסט החופשי
+                        </button>
+                    </div>
                 </div>
 
                 <!-- רשימת הקישורים השמורים -->
@@ -216,8 +221,11 @@
             const link = agentLinks[index];
             
             if (link) {
+                // העתקה ללוח
                 navigator.clipboard.writeText(link.text).then(() => {
-                    alert('הטקסט הועתק ללוח!');
+                    // העתקה גם לתיבת הטקסט החופשי
+                    document.getElementById('freeText').value = link.text;
+                    alert('הטקסט הועתק ללוח ולתיבת הטקסט החופשי!');
                 }).catch(err => {
                     console.error('שגיאה בהעתקה:', err);
                     alert('אירעה שגיאה בהעתקה. אנא נסה להעתיק ידנית.');
@@ -495,6 +503,14 @@ ${title}
                 alert('הסוכן נמחק בהצלחה');
             } catch (error) {
                 alert('שגיאה במחיקת הסוכן: ' + error.message);
+            }
+        }
+
+        function insertSavedTextToFreeText() {
+            const savedText = document.getElementById('savedLinkText').value;
+            if (savedText) {
+                document.getElementById('freeText').value = savedText;
+                document.getElementById('savedLinkText').value = ''; // ניקוי התיבה אחרי ההעתקה
             }
         }
     </script>

@@ -98,6 +98,7 @@ from datetime import datetime
 AGENTS_FILE = 'data/agents.json'
 SAVED_LINKS_FILE = 'data/saved_links.json'
 GENERAL_TEXTS_FILE = 'data/general_texts.json'
+TEMPLATES_FILE = 'data/templates.json'
 
 # יצירת תיקיית data אם לא קיימת
 os.makedirs('data', exist_ok=True)
@@ -124,10 +125,15 @@ def save_json_file(filename, data):
 initial_agents = load_json_file(AGENTS_FILE, initial_agents)  # משתמש ברשימת הסוכנים הקיימת כברירת מחדל
 saved_links = load_json_file(SAVED_LINKS_FILE, {})
 general_texts = load_json_file(GENERAL_TEXTS_FILE, [])
+templates = load_json_file(TEMPLATES_FILE, {})
 
 @app.route('/', methods=['GET'])
 def index():
-    return render_template('index.html', agents=initial_agents)
+    return render_template('index.html', 
+                         agents=initial_agents,
+                         saved_links=saved_links,
+                         general_texts=general_texts,
+                         templates=templates)
 
 @app.route('/api/agents', methods=['POST'])
 def add_agent():
@@ -220,12 +226,12 @@ def delete_agent(agent_id):
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
-@app.route('/api/saved-links', methods=['POST'])
-def save_link():
-    try:
+@app.route('/api/saved-links/<agent_id>', methods=['GET', 'POST'])
+def handle_saved_links(agent_id):
+    global saved_links
+    
+    if request.method == 'POST':
         data = request.json
-        agent_id = data.get('agentId')
-        
         if agent_id not in saved_links:
             saved_links[agent_id] = []
             
@@ -238,16 +244,14 @@ def save_link():
         
         save_json_file(SAVED_LINKS_FILE, saved_links)
         return jsonify({"message": "Link saved successfully"})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 400
-
-@app.route('/api/saved-links/<agent_id>', methods=['GET'])
-def get_saved_links(agent_id):
+    
     return jsonify(saved_links.get(agent_id, []))
 
-@app.route('/api/general-texts', methods=['POST'])
-def save_general_text():
-    try:
+@app.route('/api/general-texts', methods=['GET', 'POST'])
+def handle_general_texts():
+    global general_texts
+    
+    if request.method == 'POST':
         data = request.json
         general_texts.append({
             'title': data.get('title'),
@@ -257,12 +261,20 @@ def save_general_text():
         
         save_json_file(GENERAL_TEXTS_FILE, general_texts)
         return jsonify({"message": "Text saved successfully"})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 400
-
-@app.route('/api/general-texts', methods=['GET'])
-def get_general_texts():
+    
     return jsonify(general_texts)
+
+@app.route('/api/templates', methods=['GET', 'POST'])
+def handle_templates():
+    global templates
+    
+    if request.method == 'POST':
+        data = request.json
+        templates[data['id']] = data['content']
+        save_json_file(TEMPLATES_FILE, templates)
+        return jsonify({"message": "Template saved successfully"})
+    
+    return jsonify(templates)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080)

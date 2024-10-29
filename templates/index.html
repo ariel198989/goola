@@ -105,252 +105,40 @@
             </div>
         </div>
 
-        <!-- הוספת סקריפט לניהול קישורים שמורים -->
-        <script>
-        function addNewAgent() {
-            const name = document.getElementById('newAgentName').value.trim();
-            const id = document.getElementById('newAgentId').value.trim();
-            
-            if (!name) {
-                alert('נא להזין שם סוכן');
-                return;
-            }
-            if (!/^\d{4}$/.test(id)) {
-                alert('נא להזין 4 ספרות בדיוק');
-                return;
-            }
-
-            // הוספת הסוכן לרשימה
-            const select = document.getElementById('agent');
-            const option = document.createElement('option');
-            option.value = id;
-            option.text = `${name} (${id})`;
-            select.add(option);
-            select.value = id;  // בחירת הסוכן החדש
-
-            // ניקוי השדות
-            document.getElementById('newAgentName').value = '';
-            document.getElementById('newAgentId').value = '';
-
-            // שמירה בשרת
-            fetch('/api/agents', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    first_name: name,
-                    last_name: '',
-                    referral_id: id
-                })
-            });
-        }
-
-        function saveLink() {
-            const title = document.getElementById('savedLinkTitle').value.trim();
-            const text = document.getElementById('savedLinkText').value.trim();
-            const postText = document.getElementById('savedPostText').value.trim();
-            const selectedAgent = document.getElementById('agent');
-            const agentId = selectedAgent.value;
-            const agentName = selectedAgent.options[selectedAgent.selectedIndex].text;
-            
-            if (!title) {
-                alert('נא להזין כותרת לקישור');
-                return;
-            }
-            if (!text) {
-                alert('נא להזין טקסט');
-                return;
-            }
-
-            let savedLinks = JSON.parse(localStorage.getItem('savedLinks') || '{}');
-            if (!savedLinks[agentId]) {
-                savedLinks[agentId] = [];
-            }
-            
-            savedLinks[agentId].push({
-                title: title,
-                text: text,
-                postText: postText,
-                date: new Date().toLocaleDateString('he-IL'),
-                agentName: agentName
-            });
-
-            localStorage.setItem('savedLinks', JSON.stringify(savedLinks));
-            clearLinkForm();
-            displaySavedLinks();
-        }
-
-        function displaySavedLinks() {
-            const container = document.getElementById('savedLinks');
-            const selectedAgent = document.getElementById('agent');
-            const agentId = selectedAgent.value;
-            const savedLinks = JSON.parse(localStorage.getItem('savedLinks') || '{}');
-            const agentLinks = savedLinks[agentId] || [];
-            
-            container.innerHTML = agentLinks.map((link, index) => `
-                <div class="bg-white p-4 rounded-lg border border-yellow-200">
-                    <div class="flex justify-between items-start mb-2">
-                        <div>
-                            <div class="font-bold text-lg">${link.title}</div>
-                            <div class="text-sm text-gray-500">${link.date}</div>
-                        </div>
-                        <div class="flex space-x-2">
-                            <button onclick="editLink(${index})" class="text-blue-500 hover:text-blue-700">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                    <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/>
-                                </svg>
-                            </button>
-                            <button onclick="copyToClipboardSaved(${index})" class="text-green-500 hover:text-green-700">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                    <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z"/>
-                                    <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z"/>
-                                </svg>
-                            </button>
-                            <button onclick="deleteSavedLink(${index})" class="text-red-500 hover:text-red-700">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/>
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="whitespace-pre-wrap mb-2">${link.text}</div>
-                    ${link.postText ? `<div class="mt-2 p-2 bg-gray-50 rounded">
-                        <div class="text-sm font-semibold text-gray-600">טקסט לפוסט:</div>
-                        <div class="whitespace-pre-wrap">${link.postText}</div>
-                    </div>` : ''}
-                </div>
-            `).join('');
-        }
-
-        function editLink(index) {
-            const agentId = document.getElementById('agent').value;
-            const savedLinks = JSON.parse(localStorage.getItem('savedLinks') || '{}');
-            const link = savedLinks[agentId][index];
-            
-            document.getElementById('savedLinkTitle').value = link.title;
-            document.getElementById('savedLinkText').value = link.text;
-            document.getElementById('savedPostText').value = link.postText || '';
-            
-            // מחיקת הקישור הישן
-            savedLinks[agentId].splice(index, 1);
-            localStorage.setItem('savedLinks', JSON.stringify(savedLinks));
-            displaySavedLinks();
-        }
-
-        function clearLinkForm() {
-            document.getElementById('savedLinkTitle').value = '';
-            document.getElementById('savedLinkText').value = '';
-            document.getElementById('savedPostText').value = '';
-        }
-
-        function copyToClipboardSaved(index) {
-            const agentId = document.getElementById('agent').value;
-            const savedLinks = JSON.parse(localStorage.getItem('savedLinks') || '{}');
-            const link = savedLinks[agentId][index];
-            
-            if (link) {
-                const textToCopy = link.postText ? `${link.text}\n\n${link.postText}` : link.text;
-                document.getElementById('freeText').value = textToCopy;
-                alert('הטקסט הועתק לתיבת הטקסט החופשי!');
-            }
-        }
-
-        // הוספת מאזין אירועים לשינוי סוכן
-        document.getElementById('agent').addEventListener('change', displaySavedLinks);
-
-        // טעינת הקישורים בטעינת הדף
-        document.addEventListener('DOMContentLoaded', displaySavedLinks);
-        </script>
-
-        <!-- הוספת סקריפט פשוט -->
-        <script>
-        function addNewAgent() {
-            const name = document.getElementById('newAgentName').value.trim();
-            const id = document.getElementById('newAgentId').value.trim();
-            
-            if (!name) {
-                alert('נא להזין שם סוכן');
-                return;
-            }
-            if (!/^\d{4}$/.test(id)) {
-                alert('נא להזין 4 ספרות בדיוק');
-                return;
-            }
-
-            // הוספת הסוכן לרשימה
-            const select = document.getElementById('agent');
-            const option = document.createElement('option');
-            option.value = id;
-            option.text = `${name} (${id})`;
-            select.add(option);
-            select.value = id;  // בחירת הסוכן החדש
-
-            // ניקוי השדות
-            document.getElementById('newAgentName').value = '';
-            document.getElementById('newAgentId').value = '';
-
-            // שמירה בשרת
-            fetch('/api/agents', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    first_name: name,
-                    last_name: '',
-                    referral_id: id
-                })
-            });
-        }
-        </script>
-
-        <!-- הוספה לטופס הקיים -->
-        <div class="mb-4">
-            <label class="block text-sm font-medium text-gray-700">תבניות מסרים</label>
-            <div class="grid grid-cols-2 gap-2 mt-2">
-                <button type="button" class="message-template p-2 border rounded hover:bg-gray-100" data-message="היי! 👋 
-בדיוק נפתחה הזדמנות חדשה שחשבתי שתעניין אותך...">
-                    הזדמנות חדשה
-                </button>
-                <button type="button" class="message-template p-2 border rounded hover:bg-gray-100" data-message="🔥 מבצע יוחד לזמן מוגבל! 
-הצטרפו עכשיו וקבלו...">
-                    מבצע מיוחד
-                </button>
-            </div>
-        </div>
-
-        <!-- הוספה מתחת לבחירת הסוכן -->
+        <!-- תבניות להזמנה לוובינר (מיד אחרי תיבת המלל החופשי) -->
         <div class="mb-6">
-            <label class="block mb-2 text-lg font-semibold text-gray-700">תבניות מסרים חכמות:</label>
+            <label class="block mb-2 text-lg font-semibold text-gray-700">תבניות להזמנה לוובינר:</label>
             <div class="grid grid-cols-2 gap-4">
-                <button type="button" class="smart-template p-4 border-2 border-blue-200 rounded-lg hover:bg-blue-50 transition-all" data-template="urgency">
-                    <div class="text-xl mb-2">⏰ דחיפות</div>
-                    <div class="text-sm text-gray-600">יוצר מסר עם תחושת דחיפות ומחסור</div>
+                <button type="button" onclick="insertFinancialTemplate('pension_webinar')" class="p-4 border-2 border-blue-200 rounded-lg hover:bg-blue-50 transition-all">
+                    <div class="text-xl mb-2">🎯 וובינר תכנון פנסיוני</div>
+                    <div class="text-sm text-gray-600">הזמנה לוובינר בנושא תכנון פנסיוני</div>
                 </button>
-                <button type="button" class="smart-template p-4 border-2 border-green-200 rounded-lg hover:bg-green-50 transition-all" data-template="social-proof">
-                    <div class="text-xl mb-2">👥 הוכחה חברתית</div>
-                    <div class="text-sm text-gray-600">מציג כמה אנשים כבר הצטרפו</div>
+                
+                <button type="button" onclick="insertFinancialTemplate('family_webinar')" class="p-4 border-2 border-green-200 rounded-lg hover:bg-green-50 transition-all">
+                    <div class="text-xl mb-2">👨‍👩‍👧‍👦 וובינר כלכלת המשפחה</div>
+                    <div class="text-sm text-gray-600">הזמנה לוובינר בנושא תכנון משפחתי</div>
                 </button>
-                <button type="button" class="smart-template p-4 border-2 border-purple-200 rounded-lg hover:bg-purple-50 transition-all" data-template="fomo">
-                    <div class="text-xl mb-2">🎯 FOMO</div>
-                    <div class="text-sm text-gray-600">מדגיש את מה שהלקוח עלול להפסיד</div>
+                
+                <button type="button" onclick="insertFinancialTemplate('retirement_webinar')" class="p-4 border-2 border-purple-200 rounded-lg hover:bg-purple-50 transition-all">
+                    <div class="text-xl mb-2">🌅 וובינר פרישה</div>
+                    <div class="text-sm text-gray-600">הזמנה לוובינר בנושא תכנון פרישה</div>
                 </button>
-                <button type="button" class="smart-template p-4 border-2 border-yellow-200 rounded-lg hover:bg-yellow-50 transition-all" data-template="benefit">
-                    <div class="text-xl mb-2">✨ יתרונות</div>
-                    <div class="text-sm text-gray-600">מדגיש את התועלות העיקריות</div>
+                
+                <button type="button" onclick="insertFinancialTemplate('investment_webinar')" class="p-4 border-2 border-yellow-200 rounded-lg hover:bg-yellow-50 transition-all">
+                    <div class="text-xl mb-2">💰 וובינר השקעות</div>
+                    <div class="text-sm text-gray-600">הזמנה לוובינר בנושא השקעות</div>
                 </button>
             </div>
         </div>
 
-        <!-- הוספה אחרי בלוק "קישורים מוכנים לשליחה" -->
-        <div class="mt-4 bg-blue-50 border-2 border-blue-200 rounded-lg p-6">
+        <!-- טקסטים כלליים (בסוף) -->
+        <div class="mt-8 bg-blue-50 border-2 border-blue-200 rounded-lg p-6">
             <h3 class="text-xl font-semibold mb-4 text-blue-800">טקסטים כלליים</h3>
             
             <!-- הוספת טקסט חדש -->
             <div class="mb-4 p-4 bg-white rounded-lg border border-blue-200">
                 <input type="text" id="generalTextTitle" class="w-full p-2 border rounded mb-2" 
-                    placeholder="כותרת הטקסט (למשל: ברכת יום הולדת)">
+                    placeholder="כותרת הטקסט (למשל: טקסט לפגישת ייעוץ)">
                 <textarea id="generalTextContent" rows="3" class="w-full p-2 border rounded mb-2" 
                     placeholder="הכנס טקסט כללי לשמירה..."></textarea>
                 <div class="flex justify-between">
@@ -448,16 +236,394 @@
             displayGeneralTexts();
         }
 
-        function insertGeneralTextToFreeText() {
-            const content = document.getElementById('generalTextContent').value;
-            if (content) {
-                document.getElementById('freeText').value = content;
-                document.getElementById('generalTextContent').value = '';
+        // טעינת הטקסטים בטעינת הדף
+        document.addEventListener('DOMContentLoaded', displayGeneralTexts);
+        </script>
+
+        <!-- הוספת סקריפט לניהול טקסטים כלליים -->
+        <script>
+        function saveGeneralText() {
+            const title = document.getElementById('generalTextTitle').value.trim();
+            const content = document.getElementById('generalTextContent').value.trim();
+            
+            if (!title) {
+                alert('נא להזין כותרת לטקסט');
+                return;
             }
+            if (!content) {
+                alert('נא להזין טקסט');
+                return;
+            }
+
+            // שמירה ב-localStorage
+            let savedTexts = JSON.parse(localStorage.getItem('generalTexts') || '[]');
+            savedTexts.push({
+                title: title,
+                content: content,
+                date: new Date().toLocaleDateString('he-IL')
+            });
+
+            localStorage.setItem('generalTexts', JSON.stringify(savedTexts));
+            
+            // ניקוי השדות
+            document.getElementById('generalTextTitle').value = '';
+            document.getElementById('generalTextContent').value = '';
+            
+            displayGeneralTexts();
+        }
+
+        function displayGeneralTexts() {
+            const container = document.getElementById('savedGeneralTexts');
+            const savedTexts = JSON.parse(localStorage.getItem('generalTexts') || '[]');
+            
+            container.innerHTML = savedTexts.map((text, index) => `
+                <div class="bg-white p-4 rounded-lg border border-blue-200 flex items-start justify-between">
+                    <div class="flex-1">
+                        <div class="font-bold text-lg mb-1">${text.title}</div>
+                        <div class="text-sm text-gray-500 mb-2">${text.date}</div>
+                        <div class="whitespace-pre-wrap">${text.content}</div>
+                    </div>
+                    <div class="flex space-x-2 mr-2">
+                        <button onclick="copyGeneralText(${index})" class="text-blue-500 hover:text-blue-700">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z"/>
+                                <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z"/>
+                            </svg>
+                        </button>
+                        <button onclick="deleteGeneralText(${index})" class="text-red-500 hover:text-red-700">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function copyGeneralText(index) {
+            const savedTexts = JSON.parse(localStorage.getItem('generalTexts') || '[]');
+            const text = savedTexts[index];
+            
+            if (text) {
+                document.getElementById('freeText').value = text.content;
+                alert('הטקסט הועתק לתיבת הטקסט החופשי!');
+            }
+        }
+
+        function deleteGeneralText(index) {
+            if (!confirm('האם אתה בטוח שברצונך למחוק טקסט זה?')) return;
+            
+            let savedTexts = JSON.parse(localStorage.getItem('generalTexts') || '[]');
+            savedTexts.splice(index, 1);
+            localStorage.setItem('generalTexts', JSON.stringify(savedTexts));
+            displayGeneralTexts();
         }
 
         // טעינת הטקסטים בטעינת הדף
         document.addEventListener('DOMContentLoaded', displayGeneralTexts);
+        </script>
+
+        <!-- הוספת סקריפט לניהול טקסטים כלליים -->
+        <script>
+        function saveGeneralText() {
+            const title = document.getElementById('generalTextTitle').value.trim();
+            const content = document.getElementById('generalTextContent').value.trim();
+            
+            if (!title) {
+                alert('נא להזין כותרת לטקסט');
+                return;
+            }
+            if (!content) {
+                alert('נא להזין טקסט');
+                return;
+            }
+
+            // שמירה ב-localStorage
+            let savedTexts = JSON.parse(localStorage.getItem('generalTexts') || '[]');
+            savedTexts.push({
+                title: title,
+                content: content,
+                date: new Date().toLocaleDateString('he-IL')
+            });
+
+            localStorage.setItem('generalTexts', JSON.stringify(savedTexts));
+            
+            // ניקוי השדות
+            document.getElementById('generalTextTitle').value = '';
+            document.getElementById('generalTextContent').value = '';
+            
+            displayGeneralTexts();
+        }
+
+        function displayGeneralTexts() {
+            const container = document.getElementById('savedGeneralTexts');
+            const savedTexts = JSON.parse(localStorage.getItem('generalTexts') || '[]');
+            
+            container.innerHTML = savedTexts.map((text, index) => `
+                <div class="bg-white p-4 rounded-lg border border-blue-200 flex items-start justify-between">
+                    <div class="flex-1">
+                        <div class="font-bold text-lg mb-1">${text.title}</div>
+                        <div class="text-sm text-gray-500 mb-2">${text.date}</div>
+                        <div class="whitespace-pre-wrap">${text.content}</div>
+                    </div>
+                    <div class="flex space-x-2 mr-2">
+                        <button onclick="copyGeneralText(${index})" class="text-blue-500 hover:text-blue-700">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z"/>
+                                <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z"/>
+                            </svg>
+                        </button>
+                        <button onclick="deleteGeneralText(${index})" class="text-red-500 hover:text-red-700">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function copyGeneralText(index) {
+            const savedTexts = JSON.parse(localStorage.getItem('generalTexts') || '[]');
+            const text = savedTexts[index];
+            
+            if (text) {
+                document.getElementById('freeText').value = text.content;
+                alert('הטקסט הועתק לתיבת הטקסט החופשי!');
+            }
+        }
+
+        function deleteGeneralText(index) {
+            if (!confirm('האם אתה בטוח שברצונך למחוק טקסט זה?')) return;
+            
+            let savedTexts = JSON.parse(localStorage.getItem('generalTexts') || '[]');
+            savedTexts.splice(index, 1);
+            localStorage.setItem('generalTexts', JSON.stringify(savedTexts));
+            displayGeneralTexts();
+        }
+
+        // טעינת הטקסטים בטעינת הדף
+        document.addEventListener('DOMContentLoaded', displayGeneralTexts);
+        </script>
+
+        <!-- עדכון הסקריפט עם התבניות החדשות -->
+        <script>
+        $('.smart-template').click(function() {
+            const templateType = $(this).data('template');
+            let messageText = '';
+
+            switch(templateType) {
+                case 'pension':
+                    messageText = `🎯 תכנון פנסיוני חכם - המפתח לעתיד בטוח!
+
+חושבים שאתם משלמים יותר מדי על הפנסיה? 
+לא בטוחים שהחיסכון הפנסיוני שלכם מותאם לצרכים שלכם?
+
+במפגש ייעוץ אישי נעבור יחד על:
+✅ בדיקת התיק הפנסיוני הקיים
+✅ התאמת מסלולי החיסכון לפרופיל האישי שלכם
+✅ אופטימיזציה של דמי הניהול והעלויות
+✅ בניית אסטרטגיית חיסכון ארוכת טווח
+
+🎁 בונוס למצטרפים:
+דו"ח מקיף על מצב החיסכון הפנסיוני שלכם - שווי 500 ₪!
+
+לקביעת פגישת ייעוץ ללא עלות 👇`;
+                    break;
+
+                case 'investment':
+                    messageText = `💰 מחפשים דרך חכמה להשקיע את הכסף שלכם?
+
+בשוק תנודתי ומאתגר, חשוב לקבל החלטות מושכלות!
+
+במפגש ייעוץ השקעות נדבר על:
+📈 אפיקי השקעה מותאמים אישית
+📊 ניהול סיכונים מקצועי
+💎 הזדמנויות השקעה ייחודיות
+🔄 בניית תיק השקעות מאוזן
+
+יתרונות הייעוץ שלנו:
+✅ ניסיון של עשרות שנים בשוק ההון
+✅ גישה למגוון רחב של מכשירי השקעה
+✅ ליווי אישי ומקצועי לאורך כל הדרך
+✅ שקיפות מלאה בעמלות ובתשואות
+
+לתיאום פגישת היכרות 👇`;
+                    break;
+
+                case 'family':
+                    messageText = `👨‍👩‍👧‍👦 תכנון פיננסי למשפחה - כי העתיד של המשפחה שלכם חשוב!
+
+איך נערכים נכון לעתיד המשפחה?
+מה עושים עם החסכונות של הילדים?
+איך מתכננים את החינוך הגבוה?
+
+בפגישת ייעוץ נבנה יחד:
+🏠 תקציב משפחתי חכם
+📚 תכנית חיסכון לחינוך הילדים
+🎯 יעדים פיננסיים משפחתיים
+🛡️ הגנות ביטוחיות למשפחה
+
+🎁 מתנה למשפחות שקובעות פגישה:
+קובץ אקסל מתקדם לניהול תקציב משפחתי!
+
+לקביעת פגישת ייעוץ משפחתית 👇`;
+                    break;
+
+                case 'retirement':
+                    messageText = `🌅 תכנון פרישה מיטבי - לחיים טובים אחרי העבודה!
+
+חולמים על פרישה נוחה ורגועה?
+רוצים להבטיח הכנסה קבועה גם אחרי הפרישה?
+
+בפגישת תכנון פרישה נעבור על:
+💰 חישוב הסכום הנדרש לפרישה נוחה
+📊 בניית תזרים הכנסות
+🔄 אסטרטגיות למשיכת כספי פנסיה
+💡 אופטימיזציה של המיסוי
+
+⭐️ כולל:
+✅ סימולציית פרישה מקיפה
+✅ בדיקת זכאויות מול ביטוח לאומי
+✅ תכנון מיסוי חכם
+
+להבטחת עתיד כלכלי יציב 👇`;
+                    break;
+
+                case 'urgency':
+                    messageText = `⚡️ הצעה מיוחדת לזמן מוגבל!
+
+רק עד סוף החודש:
+🎯 ייעוץ פיננסי מקיף ללא עלות
+💰 50% הנחה על דמי הניהול בשנה הראשונה
+🎁 חבילת הטבות בשווי אלפי שקלים
+
+מה מקבלים?
+✅ פגישת ייעוץ פנים אל פנים
+✅ דו"ח מצב פיננסי מקיף
+✅ תכנית פעולה מותאמת אישית
+✅ ליווי צמוד למשך 3 חודשים
+
+⏰ ההצעה בתוקף ל-48 שעות בלבד!
+
+להבטחת ההטבות המיוחדות 👇`;
+                    break;
+
+                case 'webinar':
+                    messageText = `🎥 הזמנה לוובינר מקצועי: "סודות התכנון הפיננסי"
+
+מה נלמד בוובינר?
+📈 אסטרטגיות השקעה מתקדמות
+💰 ניהול תיק פנסיוני חכם
+🎯 בניית תכנית פיננסית אישית
+💡 טיפים להתנהלות פיננסית נכונה
+
+🎁 בונוסים למשתתפי הוובינר:
+✅ מדריך דיגיטלי לתכנון פיננסי
+✅ כלים לניהול תקציב
+✅ פגישת ייעוץ אישית בהנחה של 50%
+
+⏰ הוובינר יתקיים ביום חמישי הקרוב בשעה 20:00
+
+מספר המקומות מוגבל!
+להרשמה מהירה 👇`;
+                    break;
+            }
+
+            $('#freeText').val(messageText);
+        });
+        </script>
+
+        <!-- הוספה בסוף הדף, לפני תג הסגירה של body -->
+        <script>
+        function insertFinancialTemplate(type) {
+            const templates = {
+                'pension_webinar': `🎯 הזמנה לוובינר: "תכנון פנסיוני חכם - המפתח לעתיד כלכלי בטוח"
+
+מה נלמד בוובינר?
+✅ איך לבחור את הפנסיה הנכונה עבורכם
+✅ טיפים לחיסכון משמעותי בדמי ניהול
+✅ הסודות שחברות הביטוח לא רוצות שתדעו
+✅ איך להגדיל את החיסכון הפנסיוני שלכם
+
+🎁 בונוס למשתתפי הוובינר:
+• מדריך דיגיטלי "5 טעויות שחייבים להימנע מהן בחיסכון פנסיוני"
+• דו"ח אישי לבדיקת החיסכון הפנסיוני שלכם
+• שובר הנחה לפגישת ייעוץ פרטית
+
+⏰ הוובינר יתקיים ביום חמישי הקרוב בשעה 20:00
+⭐️ משך הוובינר: כשעה
+💻 הוובינר יתקיים בזום
+
+מספר המקומות מוגבל!
+להרשמה לחצו כאן 👇`,
+
+                'family_webinar': `👨‍👩‍👧‍👦 הזמנה לוובינר: "תכנון פיננסי למשפחה - המדריך המלא"
+
+מה נלמד בוובינר?
+✅ איך לבנות תקציב משפחתי שעובד
+✅ תכנון חיסכון חכם לילדים
+✅ הכנה פיננסית לחינוך גבוה
+✅ בניית רשת ביטחון כלכלית למשפחה
+
+🎁 בונוס למשתתפי הוובינר:
+• קובץ אקסל לניהול תקציב משפחתי
+• מדריך "10 כללי הזהב לחיסכון משפחתי"
+• ייעוץ טלפוני אישי חינם
+
+⏰ הוובינר יתקיים ביום שלישי הקרוב בשעה 20:30
+⭐️ משך הוובינר: כשעה
+💻 הוובינר יתקיים בזום
+
+מספר המקומות מוגבל!
+להרשמה לחצו כאן 👇`,
+
+                'retirement_webinar': `🌅 הזמנה לוובינר: "תכנון פרישה מוצלח - כל מה שצריך לדעת"
+
+מה נלמד בוובינר?
+✅ איך לתכנן נכון את גיל הפרישה
+✅ בניית תזרים הכנסות לאחר הפרישה
+✅ מקסום זכויות מול ביטוח לאומי
+✅ אסטרטגיות מיסוי חכמות
+
+🎁 בונוס למשתתפי הוובינר:
+• מחשבון פרישה אישי
+• מדריך "7 צעדים הכרחיים לפרישה מוצלחת"
+• פגישת ייעוץ פרישה ראשונה חינם
+
+⏰ הוובינר יתקיים ביום ראשון הקרוב בשעה 19:00
+⭐️ משך הוובינר: כשעה וחצי
+💻 הוובינר יתקיים בזום
+
+מספר המקומות מוגבל!
+להרשמה לחצו כאן 👇`,
+
+                'investment_webinar': `💰 הזמנה לוובינר: "השקעות חכמות - המדריך המלא למשקיע המתחיל"
+
+מה נלמד בוובינר?
+✅ איך לבנות תיק השקעות מאוזן
+✅ אסטרטגיות השקעה מנצחות
+✅ ניהול סיכונים נכון
+✅ טיפים להשקעה בתקופת אי-ודאות
+
+🎁 בונוס למשתתפי הוובינר:
+• מדריך "התחלת השקעות בשוק ההון"
+• כלי אקסל לניהול תיק השקעות
+• פגישת ייעוץ השקעות ראשונה חינם
+
+⏰ הוובינר יתקיים ביום רביעי הקרוב בשעה 20:00
+⭐️ משך הוובינר: כשעה
+💻 הוובינר יתקיים בזום
+
+מספר המקומות מוגבל!
+להרשמה לחצו כאן 👇`
+            };
+
+            const selectedTemplate = templates[type];
+            if (selectedTemplate) {
+                document.getElementById('freeText').value = selectedTemplate;
+            }
+        }
         </script>
     </div>
 
@@ -515,56 +681,123 @@
             // הוספת מאזיני אירועים לתבניות החכמות
             $('.smart-template').click(function() {
                 const templateType = $(this).data('template');
-                const title = $('#preview-title').text() || 'הזדמנות חדשה';
                 let messageText = '';
 
                 switch(templateType) {
+                    case 'pension':
+                        messageText = `🎯 תכנון פנסיוני חכם - המפתח לעתיד בטוח!
+
+חושבים שאתם משלמים יותר מדי על הפנסיה? 
+לא בטוחים שהחיסכון הפנסיוני שלכם מותאם לצרכים שלכם?
+
+במפגש ייעוץ אישי נעבור יחד על:
+✅ בדיקת התיק הפנסיוני הקיים
+✅ התאמת מסלולי החיסכון לפרופיל האישי שלכם
+✅ אופטימיזציה של דמי הניהול והעלויות
+✅ בניית אסטרטגיית חיסכון ארוכת טווח
+
+🎁 בונוס למצטרפים:
+דו"ח מקיף על מצב החיסכון הפנסיוני שלכם - שווי 500 ₪!
+
+לקביעת פגישת ייעוץ ללא עלות 👇`;
+                        break;
+
+                    case 'investment':
+                        messageText = `💰 מחפשים דרך חכמה להשקיע את הכסף שלכם?
+
+בשוק תנודתי ומאתגר, חשוב לקבל החלטות מושכלות!
+
+במפגש ייעוץ השקעות נדבר על:
+📈 אפיקי השקעה מותאמים אישית
+📊 ניהול סיכונים מקצועי
+💎 הזדמנויות השקעה ייחודיות
+🔄 בניית תיק השקעות מאוזן
+
+יתרונות הייעוץ שלנו:
+✅ ניסיון של עשרות שנים בשוק ההון
+✅ גישה למגוון רחב של מכשירי השקעה
+✅ ליווי אישי ומקצועי לאורך כל הדרך
+✅ שקיפות מלאה בעמלות ובתשואות
+
+לתיאום פגישת היכרות 👇`;
+                        break;
+
+                    case 'family':
+                        messageText = `👨‍👩‍👧‍👦 תכנון פיננסי למשפחה - כי העתיד של המשפחה שלכם חשוב!
+
+איך נערכים נכון לעתיד המשפחה?
+מה עושים עם החסכונות של הילדים?
+איך מתכננים את החינוך הגבוה?
+
+בפגישת ייעוץ נבנה יחד:
+🏠 תקציב משפחתי חכם
+📚 תכנית חיסכון לחינוך הילדים
+🎯 יעדים פיננסיים משפחתיים
+🛡️ הגנות ביטוחיות למשפחה
+
+🎁 מתנה למשפחות שקובעות פגישה:
+קובץ אקסל מתקדם לניהול תקציב משפחתי!
+
+לקביעת פגישת ייעוץ משפחתית 👇`;
+                        break;
+
+                    case 'retirement':
+                        messageText = `🌅 תכנון פרישה מיטבי - לחיים טובים אחרי העבודה!
+
+חולמים על פרישה נוחה ורגועה?
+רוצים להבטיח הכנסה קבועה גם אחרי הפרישה?
+
+בפגישת תכנון פרישה נעבור על:
+💰 חישוב הסכום הנדרש לפרישה נוחה
+📊 בניית תזרים הכנסות
+🔄 אסטרטגיות למשיכת כספי פנסיה
+💡 אופטימיזציה של המיסוי
+
+⭐️ כולל:
+✅ סימולציית פרישה מקיפה
+✅ בדיקת זכאויות מול ביטוח לאומי
+✅ תכנון מיסוי חכם
+
+להבטחת עתיד כלכלי יציב 👇`;
+                        break;
+
                     case 'urgency':
-                        messageText = `⏰ הזדמנות מוגבלת בזמן!
+                        messageText = `⚡️ הצעה מיוחדת לזמן מוגבל!
 
-${title}
+רק עד סוף החודש:
+🎯 ייעוץ פיננסי מקיף ללא עלות
+💰 50% הנחה על דמי הניהול בשנה הראשונה
+🎁 חבילת הטבות בשווי אלפי שקלים
 
-🔥 מבצע מיוחד שיסתיים בקרוב
-⚡️ כמות המקומות מוגבלת
-🎯 פעלו עכשיו לפני שיהיה מאוחר מדי
+מה מקבלים?
+✅ פגישת ייעוץ פנים אל פנים
+✅ דו"ח מצב פיננסי מקיף
+✅ תכנית פעולה מותאמת אישית
+✅ ליווי צמוד למשך 3 חודשים
 
-הירשמו מיד! 👇`;
+⏰ ההצעה בתוקף ל-48 שעות בלבד!
+
+להבטחת ההטבות המיוחדות 👇`;
                         break;
 
-                    case 'social-proof':
-                        messageText = `👥 ההצלחה מדברת בעד עצמה!
+                    case 'webinar':
+                        messageText = `🎥 הזמנה לוובינר מקצועי: "סודות התכנון הפיננסי"
 
-${title}
+מה נלמד בוובינר?
+📈 אסטרטגיות השקעה מתקדמות
+💰 ניהול תיק פנסיוני חכם
+🎯 בניית תכנית פיננסית אישית
+💡 טיפים להתנהלות פיננסית נכונה
 
-✨ מאות אנשים כבר הצטרפו אלינו
-💫 הצטרפו למשפחת המצליחים
-🌟 קהילה תומכת של אנשים כמוכם
+🎁 בונוסים למשתתפי הוובינר:
+✅ מדריך דיגיטלי לתכנון פיננסי
+✅ כלים לניהול תקציב
+✅ פגישת ייעוץ אישית בהנחה של 50%
 
-הצטרפו עכשיו! 👇`;
-                        break;
+⏰ הוובינר יתקיים ביום חמישי הקרוב בשעה 20:00
 
-                    case 'fomo':
-                        messageText = `🎯 אל תפספסו את ההזדמנות!
-
-${title}
-
-❌ אל תהיו אלה שיגידו "היינו צריכים..."
-⭐️ אלפי אנשים כבר נהנים מהיתרונות
-🔥 ההצעה הזו לא תחזור
-
-הבטיחו את מקומכם עכשיו! 👇`;
-                        break;
-
-                    case 'benefit':
-                        messageText = `✨ הזדמנות מיוחדת עבורכם!
-
-${title}
-
-🎁 קבלו גישה לכלים הכי מתקדמים
-💪 שדרגו את היכולות שלכם
-🌟 תוצאות מוכחות בשטח
-
-גלו עוד 👇`;
+מספר המקומות מוגבל!
+להרשמה לחצו כאן 👇`;
                         break;
                 }
 

@@ -14,7 +14,7 @@
         <h1 class="text-4xl font-bold mb-8 text-center text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">יצירת קישורים לסוכני גולה</h1>
 
         <form id="linkForm" class="space-y-6">
-            <!-- קישורים מוכנים לשליחה קודם -->
+            <!-- עדכון בלוק הקישורים המוכנים -->
             <div class="mt-4 bg-yellow-50 border-2 border-yellow-200 rounded-lg p-6">
                 <h3 class="text-xl font-semibold mb-4 text-yellow-800">קישורים מוכנים לשליחה</h3>
                 
@@ -24,6 +24,8 @@
                         placeholder="כותרת הקישור (למשל: וובינר פנסיה)">
                     <textarea id="savedLinkText" rows="3" class="w-full p-2 border rounded mb-2" 
                         placeholder="הכנס טקסט וקישור לשמירה..."></textarea>
+                    <textarea id="savedPostText" rows="3" class="w-full p-2 border rounded mb-2" 
+                        placeholder="טקסט ייעודי לפוסט (אופציונלי)..."></textarea>
                     <div class="flex justify-between">
                         <button onclick="saveLink()" class="bg-yellow-500 text-white px-4 py-2 rounded hover:bg-yellow-600">
                             שמור קישור
@@ -83,7 +85,7 @@
         </form>
         
         <div id="result" class="hidden mt-8 bg-green-100 border-2 border-green-400 rounded-lg p-6">
-            <strong class="block mb-4 text-xl font-bold text-green-800">התוצאה:</strong>
+            <strong class="block mb-4 text-xl font-bold text-green-800">התוצה:</strong>
             <p id="full-text" class="mb-4 p-4 bg-white border border-green-400 rounded-lg break-all whitespace-pre-wrap"></p>
             <button onclick="copyToClipboard()" class="w-full bg-green-500 text-white font-bold py-3 px-4 rounded-lg hover:bg-green-600 transition-all duration-300">העתק תוצאה</button>
         </div>
@@ -147,6 +149,7 @@
         function saveLink() {
             const title = document.getElementById('savedLinkTitle').value.trim();
             const text = document.getElementById('savedLinkText').value.trim();
+            const postText = document.getElementById('savedPostText').value.trim();
             const selectedAgent = document.getElementById('agent');
             const agentId = selectedAgent.value;
             const agentName = selectedAgent.options[selectedAgent.selectedIndex].text;
@@ -160,9 +163,7 @@
                 return;
             }
 
-            // שמירה ב-localStorage עם פרטי הסוכן
             let savedLinks = JSON.parse(localStorage.getItem('savedLinks') || '{}');
-            
             if (!savedLinks[agentId]) {
                 savedLinks[agentId] = [];
             }
@@ -170,16 +171,13 @@
             savedLinks[agentId].push({
                 title: title,
                 text: text,
+                postText: postText,
                 date: new Date().toLocaleDateString('he-IL'),
                 agentName: agentName
             });
 
             localStorage.setItem('savedLinks', JSON.stringify(savedLinks));
-            
-            // ניקוי השדות
-            document.getElementById('savedLinkTitle').value = '';
-            document.getElementById('savedLinkText').value = '';
-            
+            clearLinkForm();
             displaySavedLinks();
         }
 
@@ -191,58 +189,70 @@
             const agentLinks = savedLinks[agentId] || [];
             
             container.innerHTML = agentLinks.map((link, index) => `
-                <div class="bg-white p-4 rounded-lg border border-yellow-200 flex items-start justify-between">
-                    <div class="flex-1">
-                        <div class="font-bold text-lg mb-1">${link.title}</div>
-                        <div class="text-sm text-gray-500 mb-2">${link.date}</div>
-                        <div class="whitespace-pre-wrap">${link.text}</div>
+                <div class="bg-white p-4 rounded-lg border border-yellow-200">
+                    <div class="flex justify-between items-start mb-2">
+                        <div>
+                            <div class="font-bold text-lg">${link.title}</div>
+                            <div class="text-sm text-gray-500">${link.date}</div>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button onclick="editLink(${index})" class="text-blue-500 hover:text-blue-700">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z"/>
+                                </svg>
+                            </button>
+                            <button onclick="copyToClipboardSaved(${index})" class="text-green-500 hover:text-green-700">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z"/>
+                                    <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z"/>
+                                </svg>
+                            </button>
+                            <button onclick="deleteSavedLink(${index})" class="text-red-500 hover:text-red-700">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                                </svg>
+                            </button>
+                        </div>
                     </div>
-                    <div class="flex space-x-2 mr-2">
-                        <button onclick="copyToClipboardSaved(${index})" class="text-blue-500 hover:text-blue-700">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z"/>
-                                <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z"/>
-                            </svg>
-                        </button>
-                        <button onclick="deleteSavedLink(${index})" class="text-red-500 hover:text-red-700">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/>
-                            </svg>
-                        </button>
-                    </div>
+                    <div class="whitespace-pre-wrap mb-2">${link.text}</div>
+                    ${link.postText ? `<div class="mt-2 p-2 bg-gray-50 rounded">
+                        <div class="text-sm font-semibold text-gray-600">טקסט לפוסט:</div>
+                        <div class="whitespace-pre-wrap">${link.postText}</div>
+                    </div>` : ''}
                 </div>
             `).join('');
+        }
+
+        function editLink(index) {
+            const agentId = document.getElementById('agent').value;
+            const savedLinks = JSON.parse(localStorage.getItem('savedLinks') || '{}');
+            const link = savedLinks[agentId][index];
+            
+            document.getElementById('savedLinkTitle').value = link.title;
+            document.getElementById('savedLinkText').value = link.text;
+            document.getElementById('savedPostText').value = link.postText || '';
+            
+            // מחיקת הקישור הישן
+            savedLinks[agentId].splice(index, 1);
+            localStorage.setItem('savedLinks', JSON.stringify(savedLinks));
+            displaySavedLinks();
+        }
+
+        function clearLinkForm() {
+            document.getElementById('savedLinkTitle').value = '';
+            document.getElementById('savedLinkText').value = '';
+            document.getElementById('savedPostText').value = '';
         }
 
         function copyToClipboardSaved(index) {
             const agentId = document.getElementById('agent').value;
             const savedLinks = JSON.parse(localStorage.getItem('savedLinks') || '{}');
-            const agentLinks = savedLinks[agentId] || [];
-            const link = agentLinks[index];
+            const link = savedLinks[agentId][index];
             
             if (link) {
-                // העתקה ללוח
-                navigator.clipboard.writeText(link.text).then(() => {
-                    // העתקה גם לתיבת הטקסט החופשי
-                    document.getElementById('freeText').value = link.text;
-                    alert('הטקסט הועתק ללוח ולתיבת הטקסט החופשי!');
-                }).catch(err => {
-                    console.error('שגיאה בהעתקה:', err);
-                    alert('אירעה שגיאה בהעתקה. אנא נסה להעתיק ידנית.');
-                });
-            }
-        }
-
-        function deleteSavedLink(index) {
-            if (!confirm('האם אתה בטוח שברצונך למחוק קישור זה?')) return;
-            
-            const agentId = document.getElementById('agent').value;
-            let savedLinks = JSON.parse(localStorage.getItem('savedLinks') || '{}');
-            
-            if (savedLinks[agentId]) {
-                savedLinks[agentId].splice(index, 1);
-                localStorage.setItem('savedLinks', JSON.stringify(savedLinks));
-                displaySavedLinks();
+                const textToCopy = link.postText ? `${link.text}\n\n${link.postText}` : link.text;
+                document.getElementById('freeText').value = textToCopy;
+                alert('הטקסט הועתק לתיבת הטקסט החופשי!');
             }
         }
 
@@ -303,7 +313,7 @@
 בדיוק נפתחה הזדמנות חדשה שחשבתי שתעניין אותך...">
                     הזדמנות חדשה
                 </button>
-                <button type="button" class="message-template p-2 border rounded hover:bg-gray-100" data-message="🔥 מבצע מיוחד לזמן מוגבל! 
+                <button type="button" class="message-template p-2 border rounded hover:bg-gray-100" data-message="🔥 מבצע יוחד לזמן מוגבל! 
 הצטרפו עכשיו וקבלו...">
                     מבצע מיוחד
                 </button>
@@ -332,6 +342,123 @@
                 </button>
             </div>
         </div>
+
+        <!-- הוספה אחרי בלוק "קישורים מוכנים לשליחה" -->
+        <div class="mt-4 bg-blue-50 border-2 border-blue-200 rounded-lg p-6">
+            <h3 class="text-xl font-semibold mb-4 text-blue-800">טקסטים כלליים</h3>
+            
+            <!-- הוספת טקסט חדש -->
+            <div class="mb-4 p-4 bg-white rounded-lg border border-blue-200">
+                <input type="text" id="generalTextTitle" class="w-full p-2 border rounded mb-2" 
+                    placeholder="כותרת הטקסט (למשל: ברכת יום הולדת)">
+                <textarea id="generalTextContent" rows="3" class="w-full p-2 border rounded mb-2" 
+                    placeholder="הכנס טקסט כללי לשמירה..."></textarea>
+                <div class="flex justify-between">
+                    <button onclick="saveGeneralText()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                        שמור טקסט
+                    </button>
+                    <button onclick="insertGeneralTextToFreeText()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                        העתק לתיבת הטקסט החופשי
+                    </button>
+                </div>
+            </div>
+
+            <!-- רשימת הטקסטים השמורים -->
+            <div id="savedGeneralTexts" class="space-y-3">
+                <!-- הטקסטים יתווספו כאן דינמית -->
+            </div>
+        </div>
+
+        <!-- הוספת סקריפט לניהול טקסטים כלליים -->
+        <script>
+        function saveGeneralText() {
+            const title = document.getElementById('generalTextTitle').value.trim();
+            const content = document.getElementById('generalTextContent').value.trim();
+            
+            if (!title) {
+                alert('נא להזין כותרת לטקסט');
+                return;
+            }
+            if (!content) {
+                alert('נא להזין טקסט');
+                return;
+            }
+
+            // שמירה ב-localStorage
+            let savedTexts = JSON.parse(localStorage.getItem('generalTexts') || '[]');
+            savedTexts.push({
+                title: title,
+                content: content,
+                date: new Date().toLocaleDateString('he-IL')
+            });
+
+            localStorage.setItem('generalTexts', JSON.stringify(savedTexts));
+            
+            // ניקוי השדות
+            document.getElementById('generalTextTitle').value = '';
+            document.getElementById('generalTextContent').value = '';
+            
+            displayGeneralTexts();
+        }
+
+        function displayGeneralTexts() {
+            const container = document.getElementById('savedGeneralTexts');
+            const savedTexts = JSON.parse(localStorage.getItem('generalTexts') || '[]');
+            
+            container.innerHTML = savedTexts.map((text, index) => `
+                <div class="bg-white p-4 rounded-lg border border-blue-200 flex items-start justify-between">
+                    <div class="flex-1">
+                        <div class="font-bold text-lg mb-1">${text.title}</div>
+                        <div class="text-sm text-gray-500 mb-2">${text.date}</div>
+                        <div class="whitespace-pre-wrap">${text.content}</div>
+                    </div>
+                    <div class="flex space-x-2 mr-2">
+                        <button onclick="copyGeneralText(${index})" class="text-blue-500 hover:text-blue-700">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z"/>
+                                <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z"/>
+                            </svg>
+                        </button>
+                        <button onclick="deleteGeneralText(${index})" class="text-red-500 hover:text-red-700">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function copyGeneralText(index) {
+            const savedTexts = JSON.parse(localStorage.getItem('generalTexts') || '[]');
+            const text = savedTexts[index];
+            
+            if (text) {
+                document.getElementById('freeText').value = text.content;
+                alert('הטקסט הועתק לתיבת הטקסט החופשי!');
+            }
+        }
+
+        function deleteGeneralText(index) {
+            if (!confirm('האם אתה בטוח שברצונך למחוק טקסט זה?')) return;
+            
+            let savedTexts = JSON.parse(localStorage.getItem('generalTexts') || '[]');
+            savedTexts.splice(index, 1);
+            localStorage.setItem('generalTexts', JSON.stringify(savedTexts));
+            displayGeneralTexts();
+        }
+
+        function insertGeneralTextToFreeText() {
+            const content = document.getElementById('generalTextContent').value;
+            if (content) {
+                document.getElementById('freeText').value = content;
+                document.getElementById('generalTextContent').value = '';
+            }
+        }
+
+        // טעינת הטקסטים בטעינת הדף
+        document.addEventListener('DOMContentLoaded', displayGeneralTexts);
+        </script>
     </div>
 
     <script>

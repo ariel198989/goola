@@ -4,6 +4,8 @@ import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
 from flask_sqlalchemy import SQLAlchemy
+import json
+import os
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///goola.db'
@@ -86,6 +88,21 @@ initial_agents = [
     {"שם פרטי": "עמוס", "שם משפחה": "חלפון", "מספר מפנה": "2807"}
 ]
 
+# הוספת פונקציה לשמירת הסוכנים לקובץ
+def save_agents_to_file():
+    with open('agents.json', 'w', encoding='utf-8') as f:
+        json.dump(initial_agents, f, ensure_ascii=False, indent=4)
+
+# הוספת פונקציה לטעינת הסוכנים מהקובץ
+def load_agents_from_file():
+    global initial_agents
+    if os.path.exists('agents.json'):
+        with open('agents.json', 'r', encoding='utf-8') as f:
+            initial_agents = json.load(f)
+
+# טעינת הסוכנים בהפעלת האפליקציה
+load_agents_from_file()
+
 @app.route('/', methods=['GET'])
 def index():
     return render_template('index.html', agents=initial_agents)
@@ -100,6 +117,9 @@ def add_agent():
             "שם משפחה": data['last_name'],
             "מספר מפנה": data['referral_id']
         })
+        
+        # שמירת הרשימה המעודכנת לקובץ
+        save_agents_to_file()
         
         return jsonify({
             "message": "Agent added successfully", 
@@ -166,6 +186,19 @@ def get_link_preview(url):
         return image_url, title, description
     except:
         return '', '', ''
+
+@app.route('/api/agents/<agent_id>', methods=['DELETE'])
+def delete_agent(agent_id):
+    try:
+        global initial_agents
+        initial_agents = [agent for agent in initial_agents if agent['מספר מפנה'] != agent_id]
+        
+        # שמירת הרשימה המעודכנת לקובץ אחרי מחיקה
+        save_agents_to_file()
+        
+        return jsonify({"message": "Agent deleted successfully"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080)

@@ -20,13 +20,22 @@
             </div>
             <div class="relative">
                 <label for="agent" class="block mb-2 text-lg font-semibold text-gray-700">בחר סוכן:</label>
-                <select name="agent" id="agent" class="w-full p-4 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent appearance-none mb-2">
-                    {% for agent in agents %}
-                    <option value="{{ agent['מספר מפנה'] }}">{{ agent['שם פרטי'] }} {{ agent['שם משפחה'] }} ({{ agent['מספר מפנה'] }})</option>
-                    {% endfor %}
-                </select>
-                
-                <!-- כפתור פשוט שפותח שתי תיבות קלט -->
+                <div class="relative flex items-center">
+                    <button type="button" onclick="deleteSelectedAgent()" class="px-4 text-red-500 hover:text-red-700">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                        </svg>
+                    </button>
+                    <select name="agent" id="agent" class="flex-1 p-4 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent appearance-none mb-2">
+                        {% for agent in agents %}
+                        <option value="{{ agent['מספר מפנה'] }}" data-agent-id="{{ agent['מספר מפנה'] }}">
+                            {{ agent['שם פרטי'] }} {{ agent['שם משפחה'] }} ({{ agent['מספר מפנה'] }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- הוספת שדות להוספת סוכן חדש -->
                 <div class="flex items-center space-x-2 mt-2">
                     <input type="text" id="newAgentName" placeholder="שם הסוכן" class="flex-1 p-2 border rounded">
                     <input type="text" id="newAgentId" placeholder="קוד (4 ספרות)" maxlength="4" class="w-24 p-2 border rounded">
@@ -284,6 +293,33 @@ ${title}
             
             // הסרת האלמנט הזמני מהדף
             document.body.removeChild(tempTextArea);
+        }
+
+        async function deleteSelectedAgent() {
+            const select = document.getElementById('agent');
+            const selectedOption = select.options[select.selectedIndex];
+            const agentId = selectedOption.value;
+            const agentName = selectedOption.text;
+
+            if (!confirm(`האם אתה בטוח שברצונך למחוק את הסוכן ${agentName}?`)) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/agents/${agentId}`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) {
+                    throw new Error('שגיאה במחיקת הסוכן');
+                }
+
+                // מחיקת הסוכן מהרשימה הנפתחת
+                select.remove(select.selectedIndex);
+                alert('הסוכן נמחק בהצלחה');
+            } catch (error) {
+                alert('שגיאה במחיקת הסוכן: ' + error.message);
+            }
         }
     </script>
 </body>

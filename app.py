@@ -2,11 +2,31 @@ from flask import Flask, render_template, request, jsonify
 from urllib.parse import urlparse, parse_qs, urlencode
 import requests
 from bs4 import BeautifulSoup
+from datetime import datetime
+from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///goola.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
 
-# רשימה מעודכנת של סוכנים
-agents = [
+# מודל עבור סוכנים
+class Agent(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    first_name = db.Column(db.String(100), nullable=False)
+    last_name = db.Column(db.String(100), nullable=False)
+    referral_id = db.Column(db.String(20), unique=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    def to_dict(self):
+        return {
+            "שם פרטי": self.first_name,
+            "שם משפחה": self.last_name,
+            "מספר מפנה": self.referral_id
+        }
+
+# רשימת סוכנים התחלתית
+initial_agents = [
     {"שם פרטי": "חלי", "שם משפחה": "דיין", "מספר מפנה": "2195"},
     {"שם פרטי": "ויקטור אביחי", "שם משפחה": "פלד", "מספר מפנה": "2421"},
     {"שם פרטי": "אלעד", "שם משפחה": "דיין", "מספר מפנה": "2192"},
@@ -66,9 +86,31 @@ agents = [
     {"שם פרטי": "עמוס", "שם משפחה": "חלפון", "מספר מפנה": "2807"}
 ]
 
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/', methods=['GET'])
 def index():
-    return render_template('index.html', agents=agents)
+    return render_template('index.html', agents=initial_agents)
+
+@app.route('/api/agents', methods=['POST'])
+def add_agent():
+    try:
+        data = request.json
+        # הוספה לרשימה הסטטית
+        initial_agents.append({
+            "שם פרטי": data['first_name'],
+            "שם משפחה": data['last_name'],
+            "מספר מפנה": data['referral_id']
+        })
+        
+        return jsonify({
+            "message": "Agent added successfully", 
+            "agent": {
+                "שם פרטי": data['first_name'],
+                "שם משפחה": data['last_name'],
+                "מספר מפנה": data['referral_id']
+            }
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
 
 @app.route('/generate_link', methods=['POST'])
 def generate_link():
@@ -76,7 +118,8 @@ def generate_link():
     original_link = request.form['link']
     free_text = request.form.get('free_text', '')
     
-    agent = next((a for a in agents if a['מספר מפנה'] == agent_id), None)
+    agent = next((a for a in initial_agents if a['מספר מפנה'] == agent_id), None)
+    
     if agent:
         custom_link = create_custom_link(original_link, agent['מספר מפנה'])
         if free_text:
@@ -84,7 +127,6 @@ def generate_link():
         else:
             full_text = custom_link
         
-        # קבלת מידע על התמונה מהקישור
         image_url, title, description = get_link_preview(original_link)
         
         result = {

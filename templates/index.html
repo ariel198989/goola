@@ -13,23 +13,16 @@
     <div class="container bg-white rounded-lg shadow-2xl p-8 transform hover:scale-105 transition-all duration-300">
         <h1 class="text-4xl font-bold mb-8 text-center text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">יצירת קישורים לסוכני גולה</h1>
 
-        <!-- חלונית טמפלטים -->
-        <div class="mb-8">
-            <h3 class="text-xl font-semibold mb-4">טמפלטים להזמנה לוובינרים</h3>
-            <select id="templateSelect" class="w-full p-4 border-2 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-transparent">
-                <option value="">בחר טמפלט</option>
-                <option value="תכנון פיננסי כללי">תכנון פיננסי כללי</option>
-                <option value="תכנון פנסיוני">תכנון פנסיוני</option>
-                <option value="כלכלת המשפחה">כלכלת המשפחה</option>
-                <option value="תכנון פרישה">תכנון פרישה</option>
-                <option value="אסטרטגיות השקעה">אסטרטגיות השקעה</option>
-                <option value="ניהול חובות ואשראי">ניהול חובות ואשראי</option>
-                <option value="יצירת הכנסה פסיבית">יצירת הכנסה פסיבית</option>
-                <option value="השקעות אלטרנטיביות">השקעות אלטרנטיביות</option>
-                <option value="תכנון פיננסי לעסקים">תכנון פיננסי לעסקים</option>
-                <option value="אסטרטגיות מיסוי">אסטרטגיות מיסוי</option>
-            </select>
-            <button id="copyTemplateButton" class="mt-4 bg-blue-500 text-white font-bold py-2 px-4 rounded hover:bg-blue-600 transition-colors">העתק לתיבת הטקסט החופשי</button>
+        <!-- הוספת כפתור סוכן חדש מתחת לכותרת -->
+        <div class="mb-6 text-center">
+            <button id="openAgentModal" class="bg-gradient-to-r from-green-500 to-green-600 text-white font-bold py-3 px-6 rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-300 shadow-lg">
+                <span class="flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 016 6H2a6 6 0 016-6zM16 7a1 1 0 10-2 0v1h-1a1 1 0 100 2h1v1a1 1 0 102 0v-1h1a1 1 0 100-2h-1V7z"/>
+                    </svg>
+                    הוסף סוכן חדש
+                </span>
+            </button>
         </div>
 
         <form id="linkForm" class="space-y-6">
@@ -73,6 +66,78 @@
                         <a id="preview-link" href="#" target="_blank" class="text-blue-600 hover:underline mt-2 block"></a>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- מודל להוספת סוכן -->
+        <div id="agentModal" class="hidden fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
+            <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                <div class="mt-3">
+                    <h3 class="text-lg font-medium leading-6 text-gray-900 mb-4">הוספת סוכן חדש</h3>
+                    <form id="addAgentForm" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">שם פרטי</label>
+                            <input type="text" id="agentFirstName" required 
+                                class="mt-1 block w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-400 focus:border-transparent">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">שם משפחה</label>
+                            <input type="text" id="agentLastName" required 
+                                class="mt-1 block w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-400 focus:border-transparent">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">מספר מפנה</label>
+                            <input type="text" id="agentReferralId" required 
+                                class="mt-1 block w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-400 focus:border-transparent">
+                        </div>
+                        <div class="flex justify-end space-x-4">
+                            <button type="button" id="closeAgentModal" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
+                                ביטול
+                            </button>
+                            <button type="submit" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                                הוסף סוכן
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- הוספה לטופס הקיים -->
+        <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700">תבניות מסרים</label>
+            <div class="grid grid-cols-2 gap-2 mt-2">
+                <button type="button" class="message-template p-2 border rounded hover:bg-gray-100" data-message="היי! 👋 
+בדיוק נפתחה הזדמנות חדשה שחשבתי שתעניין אותך...">
+                    הזדמנות חדשה
+                </button>
+                <button type="button" class="message-template p-2 border rounded hover:bg-gray-100" data-message="🔥 מבצע מיוחד לזמן מוגבל! 
+הצטרפו עכשיו וקבלו...">
+                    מבצע מיוחד
+                </button>
+            </div>
+        </div>
+
+        <!-- הוספה מתחת לבחירת הסוכן -->
+        <div class="mb-6">
+            <label class="block mb-2 text-lg font-semibold text-gray-700">תבניות מסרים חכמות:</label>
+            <div class="grid grid-cols-2 gap-4">
+                <button type="button" class="smart-template p-4 border-2 border-blue-200 rounded-lg hover:bg-blue-50 transition-all" data-template="urgency">
+                    <div class="text-xl mb-2">⏰ דחיפות</div>
+                    <div class="text-sm text-gray-600">יוצר מסר עם תחושת דחיפות ומחסור</div>
+                </button>
+                <button type="button" class="smart-template p-4 border-2 border-green-200 rounded-lg hover:bg-green-50 transition-all" data-template="social-proof">
+                    <div class="text-xl mb-2">👥 הוכחה חברתית</div>
+                    <div class="text-sm text-gray-600">מציג כמה אנשים כבר הצטרפו</div>
+                </button>
+                <button type="button" class="smart-template p-4 border-2 border-purple-200 rounded-lg hover:bg-purple-50 transition-all" data-template="fomo">
+                    <div class="text-xl mb-2">🎯 FOMO</div>
+                    <div class="text-sm text-gray-600">מדגיש את מה שהלקוח עלול להפסיד</div>
+                </button>
+                <button type="button" class="smart-template p-4 border-2 border-yellow-200 rounded-lg hover:bg-yellow-50 transition-all" data-template="benefit">
+                    <div class="text-xl mb-2">✨ יתרונות</div>
+                    <div class="text-sm text-gray-600">מדגיש את התועלות העיקריות</div>
+                </button>
             </div>
         </div>
     </div>
@@ -121,6 +186,71 @@
                     }
                 });
             }
+
+            // הוספת מאזיני אירועים לתבניות הרגילות
+            $('.message-template').click(function() {
+                const messageText = $(this).data('message');
+                $('#freeText').val(messageText);
+            });
+
+            // הוספת מאזיני אירועים לתבניות החכמות
+            $('.smart-template').click(function() {
+                const templateType = $(this).data('template');
+                const title = $('#preview-title').text() || 'הזדמנות חדשה';
+                let messageText = '';
+
+                switch(templateType) {
+                    case 'urgency':
+                        messageText = `⏰ הזדמנות מוגבלת בזמן!
+
+${title}
+
+🔥 מבצע מיוחד שיסתיים בקרוב
+⚡️ כמות המקומות מוגבלת
+🎯 פעלו עכשיו לפני שיהיה מאוחר מדי
+
+הירשמו מיד! 👇`;
+                        break;
+
+                    case 'social-proof':
+                        messageText = `👥 ההצלחה מדברת בעד עצמה!
+
+${title}
+
+✨ מאות אנשים כבר הצטרפו אלינו
+💫 הצטרפו למשפחת המצליחים
+🌟 קהילה תומכת של אנשים כמוכם
+
+הצטרפו עכשיו! 👇`;
+                        break;
+
+                    case 'fomo':
+                        messageText = `🎯 אל תפספסו את ההזדמנות!
+
+${title}
+
+❌ אל תהיו אלה שיגידו "היינו צריכים..."
+⭐️ אלפי אנשים כבר נהנים מהיתרונות
+🔥 ההצעה הזו לא תחזור
+
+הבטיחו את מקומכם עכשיו! 👇`;
+                        break;
+
+                    case 'benefit':
+                        messageText = `✨ הזדמנות מיוחדת עבורכם!
+
+${title}
+
+🎁 קבלו גישה לכלים הכי מתקדמים
+💪 שדרגו את היכולות שלכם
+🌟 תוצאות מוכחות בשטח
+
+גלו עוד 👇`;
+                        break;
+                }
+
+                $('#freeText').val(messageText);
+            });
         });
 
         function copyToClipboard() {
@@ -152,33 +282,4 @@
         }
     </script>
 </body>
-<script>
-    
-    function getTemplateText(template) {
-        switch(template) {
-            case "תכנון פיננסי כללי":
-                return "שלום חברים,\n\nאני מזמין אתכם לוובינר מרתק בנושא תכנון פיננסי כללי מטעם Goola.\n\nבוובינר נדבר על:\n• איך לבנות תקציב אישי\n• טיפים לחיסכון יעיל\n• אסטרטגיות השקעה בסיסיות\n\nהוובינר יתקיים ביום חמישי הקרוב בשעה 20:00. אל תפספסו!";
-            case "תכנון פנסיוני":
-                return "שלום,\n\nמוזמנים לוובינר חשוב בנושא תכנון פנסיוני בהובלת מומחי Goola.\n\nנושאים שנכסה:\n• סוגי קרנות פנסיה\n• כיצד לחסוך נכון לפנסיה\n• שינויים בחוק הפנסיה ומה המשמעות עבורכם\n\nהוובינר יתקיים ביום שני הבא בשעה 19:30. הירשמו עכשיו!";
-            case "כלכלת המשפחה":
-                return "שלום לכולם,\n\nהצטרפו אלינו לוובינר על כלכלת המשפחה מטעם Goola.\n\nנלמד על:\n• ניהול תקציב משפחתי\n• חיסכון משפחתי\n• השקעות חכמות למשפחה\n\nהוובינר יתקיים ביום שלישי הקרוב בשעה 18:00. אל תפספסו!";
-            case "תכנון פרישה":
-                return "שלום חברים,\n\nאני מזמין אתכם לוובינר על תכנון פרישה מטעם Goola.\n\nנושאים שנדון בהם:\n• איך לתכנן את הפרישה שלכם\n• חיסכון לפנסיה\n• השקעות לאחר הפרישה\n\nהוובינר יתקיים ביום רביעי הקרוב בשעה 17:00. הירשמו עכשיו!";
-            case "אסטרטגיות השקעה":
-                return "שלום לכולם,\n\nהצטרפו אלינו לוובינר על אסטרטגיות השקעה מטעם Goola.\n\nנלמד על:\n• סוגי השקעות\n• ניתוח שוק\n• טיפים להשקעה חכמה\n\nהוובינר יתקיים ביום חמישי הקרוב בשעה 20:00. אל תפספסו!";
-            case "ניהול חובות ואשראי":
-                return "שלום חברים,\n\nאני מזמין אתכם לוובינר על ניהול חובות ואשראי מטעם Goola.\n\nנושאים שנדון בהם:\n• איך לנהל חובות\n• טיפים לשיפור דירוג האשראי\n• אסטרטגיות לצמצום חובות\n\nהוובינר יתקיים ביום שני הבא בשעה 19:30. הירשמו עכשיו!";
-            case "יצירת הכנסה פסיבית":
-                return "שלום לכולם,\n\nהצטרפו אלינו לוובינר על יצירת הכנסה פסיבית מטעם Goola.\n\nנלמד על:\n• דרכים ליצירת הכנסה פסיבית\n• השקעות מניבות\n• ניהול הכנסות פסיביות\n\nהוובינר יתקיים ביום שלישי הקרוב בשעה 18:00. אל תפספסו!";
-            case "השקעות אלטרנטיביות":
-                return "שלום חברים,\n\nאני מזמין אתכם לוובינר על השקעות אלטרנטיביות מטעם Goola.\n\nנושאים שנדון בהם:\n• סוגי השקעות אלטרנטיביות\n• יתרונות וחסרונות\n• איך לבחור השקעות אלטרנטיביות\n\nהוובינר יתקיים ביום רביעי הקרוב בשעה 17:00. הירשמו עכשיו!";
-            case "תכנון פיננסי לעסקים":
-                return "שלום לכולם,\n\nהצטרפו אלינו לוובינר על תכנון פיננסי לעסקים מטעם Goola.\n\nנלמד על:\n• איך לבנות תקציב לעסק\n• אסטרטגיות השקעה לעסקים\n• ניהול חובות ואשראי לעסקים\n\nהוובינר יתקיים ביום חמישי הקרוב בשעה 20:00. אל תפספסו!";
-            case "אסטרטגיות מיסוי":
-                return "שלום חברים,\n\nאני מזמין אתכם לוובינר על אסטרטגיות מיסוי מטעם Goola.\n\nנושאים שנדון בהם:\n• הבנת מערכת המיסוי\n• טיפים להפחתת מיסים\n• תכנון מיסוי לעסקים\n\nהוובינר יתקיים ביום שני הבא בשעה 19:30. הירשמו עכשיו!";
-            default:
-                return "";
-        }
-    }
-</script>
 </html>

@@ -89,20 +89,41 @@ initial_agents = [
     {"שם פרטי": "עמוס", "שם משפחה": "חלפון", "מספר מפנה": "2807"}
 ]
 
-# הוספת פונקציה לשמירת הסוכנים לקובץ
-def save_agents_to_file():
-    with open('agents.json', 'w', encoding='utf-8') as f:
-        json.dump(initial_agents, f, ensure_ascii=False, indent=4)
+# הוספת ייבוא נדרש
+import json
+import os
+from datetime import datetime
 
-# הוספת פונקציה לטעינת הסוכנים מהקובץ
-def load_agents_from_file():
-    global initial_agents
-    if os.path.exists('agents.json'):
-        with open('agents.json', 'r', encoding='utf-8') as f:
-            initial_agents = json.load(f)
+# הגדרת קבצי השמירה
+AGENTS_FILE = 'data/agents.json'
+SAVED_LINKS_FILE = 'data/saved_links.json'
+GENERAL_TEXTS_FILE = 'data/general_texts.json'
 
-# טעינת הסוכנים בהפעלת האפליקציה
-load_agents_from_file()
+# יצירת תיקיית data אם לא קיימת
+os.makedirs('data', exist_ok=True)
+
+def load_json_file(filename, default_value):
+    """טעינת קובץ JSON עם ערך ברירת מחדל"""
+    try:
+        if os.path.exists(filename):
+            with open(filename, 'r', encoding='utf-8') as f:
+                return json.load(f)
+    except Exception as e:
+        print(f"Error loading {filename}: {e}")
+    return default_value
+
+def save_json_file(filename, data):
+    """שמירת נתונים לקובץ JSON"""
+    try:
+        with open(filename, 'w', encoding='utf-8') as f:
+            json.dump(data, f, ensure_ascii=False, indent=4)
+    except Exception as e:
+        print(f"Error saving {filename}: {e}")
+
+# טעינת נתונים בהפעלת השרת
+initial_agents = load_json_file(AGENTS_FILE, initial_agents)  # משתמש ברשימת הסוכנים הקיימת כברירת מחדל
+saved_links = load_json_file(SAVED_LINKS_FILE, {})
+general_texts = load_json_file(GENERAL_TEXTS_FILE, [])
 
 @app.route('/', methods=['GET'])
 def index():
@@ -112,23 +133,18 @@ def index():
 def add_agent():
     try:
         data = request.json
-        # הוספה לרשימה הסטטית
-        initial_agents.append({
+        new_agent = {
             "שם פרטי": data['first_name'],
             "שם משפחה": data['last_name'],
             "מספר מפנה": data['referral_id']
-        })
+        }
         
-        # שמירת הרשימה המעודכנת לקובץ
-        save_agents_to_file()
+        initial_agents.append(new_agent)
+        save_json_file(AGENTS_FILE, initial_agents)
         
         return jsonify({
-            "message": "Agent added successfully", 
-            "agent": {
-                "שם פרטי": data['first_name'],
-                "שם משפחה": data['last_name'],
-                "מספר מפנה": data['referral_id']
-            }
+            "message": "Agent added successfully",
+            "agent": new_agent
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 400
@@ -193,13 +209,60 @@ def delete_agent(agent_id):
     try:
         global initial_agents
         initial_agents = [agent for agent in initial_agents if agent['מספר מפנה'] != agent_id]
+        save_json_file(AGENTS_FILE, initial_agents)
         
-        # שמירת הרשימה המעודכנת לקובץ אחרי מחיקה
-        save_agents_to_file()
-        
+        # מחיקת הקישורים השמורים של הסוכן
+        if agent_id in saved_links:
+            del saved_links[agent_id]
+            save_json_file(SAVED_LINKS_FILE, saved_links)
+            
         return jsonify({"message": "Agent deleted successfully"})
     except Exception as e:
         return jsonify({"error": str(e)}), 400
+
+@app.route('/api/saved-links', methods=['POST'])
+def save_link():
+    try:
+        data = request.json
+        agent_id = data.get('agentId')
+        
+        if agent_id not in saved_links:
+            saved_links[agent_id] = []
+            
+        saved_links[agent_id].append({
+            'title': data.get('title'),
+            'text': data.get('text'),
+            'postText': data.get('postText'),
+            'date': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        })
+        
+        save_json_file(SAVED_LINKS_FILE, saved_links)
+        return jsonify({"message": "Link saved successfully"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+@app.route('/api/saved-links/<agent_id>', methods=['GET'])
+def get_saved_links(agent_id):
+    return jsonify(saved_links.get(agent_id, []))
+
+@app.route('/api/general-texts', methods=['POST'])
+def save_general_text():
+    try:
+        data = request.json
+        general_texts.append({
+            'title': data.get('title'),
+            'content': data.get('content'),
+            'date': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        })
+        
+        save_json_file(GENERAL_TEXTS_FILE, general_texts)
+        return jsonify({"message": "Text saved successfully"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 400
+
+@app.route('/api/general-texts', methods=['GET'])
+def get_general_texts():
+    return jsonify(general_texts)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080)

@@ -28,6 +28,25 @@ class Agent(db.Model):
             "מספר מפנה": self.referral_id
         }
 
+# מודלים למסד הנתונים
+class SavedLink(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    agent_id = db.Column(db.String(20), nullable=False)
+    title = db.Column(db.String(200), nullable=False)
+    text = db.Column(db.Text, nullable=False)
+    post_text = db.Column(db.Text)
+    date_created = db.Column(db.DateTime, default=datetime.utcnow)
+
+class GeneralText(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    content = db.Column(db.Text, nullable=False)
+    date_created = db.Column(db.DateTime, default=datetime.utcnow)
+
+# יצירת מסד הנתונים
+with app.app_context():
+    db.create_all()
+
 # רשימת סוכנים התחלתית
 initial_agents = [
     {"שם פרטי": "חלי", "שם משפחה": "דיין", "מספר מפנה": "2195"},
@@ -86,7 +105,7 @@ initial_agents = [
     {"שם פרטי": "אבי", "שם משפחה": "בירהון", "מספר מפנה": "2723"},
     {"שם פרטי": "יגיל", "שם משפחה": "צבעוני", "מספר מפנה": "2802"},
     {"שם פרטי": "נטליה", "שם משפחה": "מיידן", "מספר מפנה": "2805"},
-    {"שם פרטי": "עמוס", "שם משפחה": "חלפון", "מספר מפנה": "2807"}
+    {"שם פרטי": "עמוס", "שם משפחה": "חלפון", "מס��ר מפנה": "2807"}
 ]
 
 # הוספת ייבוא נדרש
@@ -233,44 +252,46 @@ def delete_agent(agent_id):
 
 @app.route('/api/saved-links/<agent_id>', methods=['GET', 'POST'])
 def handle_saved_links(agent_id):
-    global saved_links
-    
     if request.method == 'POST':
         data = request.json
-        if agent_id not in saved_links:
-            saved_links[agent_id] = []
-            
-        saved_links[agent_id].append({
-            'title': data.get('title'),
-            'text': data.get('text'),
-            'postText': data.get('postText'),
-            'date': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        })
-        
-        # שמירה בקובץ
-        save_json_file(SAVED_LINKS_FILE, saved_links)
+        new_link = SavedLink(
+            agent_id=agent_id,
+            title=data.get('title'),
+            text=data.get('text'),
+            post_text=data.get('postText')
+        )
+        db.session.add(new_link)
+        db.session.commit()
         return jsonify({"message": "Link saved successfully"})
     
-    # טעינה מהקובץ
-    saved_links = load_json_file(SAVED_LINKS_FILE, {})
-    return jsonify(saved_links.get(agent_id, []))
+    # שליפת כל הקישורים של הסוכן
+    links = SavedLink.query.filter_by(agent_id=agent_id).all()
+    return jsonify([{
+        'title': link.title,
+        'text': link.text,
+        'postText': link.post_text,
+        'date': link.date_created.strftime('%Y-%m-%d %H:%M:%S')
+    } for link in links])
 
 @app.route('/api/general-texts', methods=['GET', 'POST'])
 def handle_general_texts():
-    global general_texts
-    
     if request.method == 'POST':
         data = request.json
-        general_texts.append({
-            'title': data.get('title'),
-            'content': data.get('content'),
-            'date': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        })
-        
-        save_json_file(GENERAL_TEXTS_FILE, general_texts)
+        new_text = GeneralText(
+            title=data.get('title'),
+            content=data.get('content')
+        )
+        db.session.add(new_text)
+        db.session.commit()
         return jsonify({"message": "Text saved successfully"})
     
-    return jsonify(general_texts)
+    # שליפת כל הטקסטים הכלליים
+    texts = GeneralText.query.all()
+    return jsonify([{
+        'title': text.title,
+        'content': text.content,
+        'date': text.date_created.strftime('%Y-%m-%d %H:%M:%S')
+    } for text in texts])
 
 @app.route('/api/templates', methods=['GET', 'POST'])
 def handle_templates():
@@ -283,6 +304,75 @@ def handle_templates():
         return jsonify({"message": "Template saved successfully"})
     
     return jsonify(templates)
+
+# הוספת קוד לאתחול מסד הנתונים
+def init_db():
+    with app.app_context():
+        # יצירת כל הטבלאות
+        db.create_all()
+        
+        # בדיקה אם יש כבר סוכנים במערכת
+        if not Agent.query.first():
+            # הוספת הסוכנים ההתחלתיים
+            for agent_data in initial_agents:
+                agent = Agent(
+                    first_name=agent_data["שם פרטי"],
+                    last_name=agent_data["שם משפחה"],
+                    referral_id=agent_data["מספר מפנה"]
+                )
+                db.session.add(agent)
+        
+        # הוספת דוגמאות לקישורים שמורים
+        if not SavedLink.query.first():
+            example_links = [
+                {
+                    "agent_id": "2195",  # חלי דיין
+                    "title": "וובינר פנסיה",
+                    "text": "🎯 הזמנה לוובינר: תכנון פנסיוני חכם\n\nמה נלמד בוובינר?\n✅ איך לבחור את הפנסיה הנכונה\n✅ טיפים לחיסכון בדמי ניהול",
+                    "post_text": "טקסט נוסף לפוסט"
+                },
+                {
+                    "agent_id": "2421",  # ויקטור אביחי פלד
+                    "title": "פגישת ייעוץ",
+                    "text": "💰 הזמנה לפגישת ייעוץ אישית\n\nבואו נבנה יחד תכנית פיננסית מותאמת אישית",
+                    "post_text": ""
+                }
+            ]
+            
+            for link_data in example_links:
+                link = SavedLink(
+                    agent_id=link_data["agent_id"],
+                    title=link_data["title"],
+                    text=link_data["text"],
+                    post_text=link_data["post_text"]
+                )
+                db.session.add(link)
+        
+        # הוספת דוגמאות לטקסטים כלליים
+        if not GeneralText.query.first():
+            example_texts = [
+                {
+                    "title": "ברכת יום הולדת",
+                    "content": "🎉 מזל טוב!\nמאחלים לך יום הולדת שמח ומלא באושר ושמחה!"
+                },
+                {
+                    "title": "הזמנה לפגישה",
+                    "content": "👋 היי!\nאשמח להיפגש איתך לפגישת ייעוץ אישית ללא עלות."
+                }
+            ]
+            
+            for text_data in example_texts:
+                text = GeneralText(
+                    title=text_data["title"],
+                    content=text_data["content"]
+                )
+                db.session.add(text)
+        
+        # שמירת כל השינויים
+        db.session.commit()
+
+# הפעלת אתחול מסד הנתונים
+init_db()
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080)

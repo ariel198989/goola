@@ -129,6 +129,11 @@ templates = load_json_file(TEMPLATES_FILE, {})
 
 @app.route('/', methods=['GET'])
 def index():
+    # טעינת כל הנתונים מהקבצים
+    saved_links = load_json_file(SAVED_LINKS_FILE, {})
+    general_texts = load_json_file(GENERAL_TEXTS_FILE, [])
+    templates = load_json_file(TEMPLATES_FILE, {})
+    
     return render_template('index.html', 
                          agents=initial_agents,
                          saved_links=saved_links,
@@ -242,9 +247,12 @@ def handle_saved_links(agent_id):
             'date': datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         })
         
+        # שמירה בקובץ
         save_json_file(SAVED_LINKS_FILE, saved_links)
         return jsonify({"message": "Link saved successfully"})
     
+    # טעינה מהקובץ
+    saved_links = load_json_file(SAVED_LINKS_FILE, {})
     return jsonify(saved_links.get(agent_id, []))
 
 @app.route('/api/general-texts', methods=['GET', 'POST'])

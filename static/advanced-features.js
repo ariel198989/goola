@@ -311,4 +311,69 @@ $(document).ready(function() {
             });
         }
     };
-}); 
+});
+
+// הוספת פונקציה לטעינת נתונים מהשרת
+async function loadSavedLinksFromServer() {
+    try {
+        const agentId = document.getElementById('agent').value;
+        const response = await fetch(`/api/saved-links/${agentId}`);
+        const savedLinks = await response.json();
+        
+        // שמירה ב-localStorage
+        localStorage.setItem('savedLinks', JSON.stringify(savedLinks));
+        
+        // הצגת הקישורים
+        displaySavedLinks();
+    } catch (error) {
+        console.error('Error loading saved links:', error);
+    }
+}
+
+// הוספת פונקציה לשמירת קישור בשרת
+async function saveLinkToServer(linkData) {
+    try {
+        const response = await fetch(`/api/saved-links/${linkData.agentId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(linkData)
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to save link');
+        }
+        
+        // טעינה מחדש של הקישורים מהשרת
+        await loadSavedLinksFromServer();
+    } catch (error) {
+        console.error('Error saving link:', error);
+        alert('שגיאה בשמירת הקישור');
+    }
+}
+
+// עדכון פונקציית saveLink
+function saveLink() {
+    const title = document.getElementById('savedLinkTitle').value.trim();
+    const text = document.getElementById('savedLinkText').value.trim();
+    const postText = document.getElementById('savedPostText').value.trim();
+    const agentId = document.getElementById('agent').value;
+    
+    if (!title || !text) {
+        alert('נא למלא את כל השדות הנדרשים');
+        return;
+    }
+    
+    // שמירה בשרת
+    saveLinkToServer({
+        title,
+        text,
+        postText,
+        agentId
+    });
+}
+
+// טעינת הקישורים בטעינת הדף ובשינוי סוכן
+document.addEventListener('DOMContentLoaded', loadSavedLinksFromServer);
+document.getElementById('agent').addEventListener('change', loadSavedLinksFromServer); 

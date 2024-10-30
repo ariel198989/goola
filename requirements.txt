@@ -6,3 +6,4 @@ beautifulsoup4==4.12.2
 APScheduler==3.10.1
 SQLAlchemy==1.4.41
 flask-sqlalchemy
+psycopg2-binary==2.9.9
